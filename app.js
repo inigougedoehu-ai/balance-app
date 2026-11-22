@@ -407,7 +407,90 @@ async function testAccountPassword(event) {
   }
 }
 
+/**
+ * Prueba de un iframe HTMLService de Google como canal privado.
+ * El iframe solo acepta órdenes del origen oficial de Balance.
+ * No se envían claves, tokens ni datos de salud en esta prueba.
+ */
+function testPrivateBridge() {
+  const button = $("check-bridge");
+  const status = $("bridge-status");
+  button.disabled = true;
+  status.dataset.state = "working";
+  status.textContent = "Conectando con el puente privado de Google…";
+
+  const nonce = crypto.randomUUID();
+  const frame = document.createElement("iframe");
+  frame.title = "Prueba de conexión privada de Balance";
+  frame.setAttribute("aria-hidden", "true");
+  frame.tabIndex = -1;
+  frame.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;border:0;left:-20px;top:-20px";
+  const bridgeVersion = "balance-bridge-v1";
+  let peer = null;
+  let peerOrigin = "";
+  let finished = false;
+  const url = new URL(BACKEND_URL);
+  url.searchParams.set("action", "bridge");
+  url.searchParams.set("nonce", nonce);
+
+  const done = (error, response) => {
+    if (finished) return;
+    finished = true;
+    clearTimeout(timer);
+    window.removeEventListener("message", onBridgeMessage);
+    frame.remove();
+    button.disabled = false;
+    if (error) {
+      status.dataset.state = "error";
+      status.textContent = "La prueba del puente no se ha completado: " + error.message;
+    } else {
+      status.dataset.state = "success";
+      status.textContent = "Puente privado conectado a Apps Script (" + response.version + "). Listo para preparar el inicio de sesión.";
+    }
+  };
+  const onBridgeMessage = event => {
+    let origin;
+    try { origin = new URL(event.origin); } catch { return; }
+    // Google aloja HTMLService en script.google.com o en sus subdominios googleusercontent.com.
+    const googleOrigin = origin.protocol === "https:" &&
+      (origin.hostname === "script.google.com" ||
+        origin.hostname.endsWith(".googleusercontent.com"));
+    if (!googleOrigin) return;
+
+    const msg = event.data;
+    if (!msg || msg.app !== "balance" || msg.bridge !== bridgeVersion || msg.nonce !== nonce) return;
+
+    if (msg.type === "ready" && !peer) {
+      peer = event.source;
+      peerOrigin = event.origin;
+      status.textContent = "Puente abierto. Solicitando respuesta del servidor…";
+      peer.postMessage({ app: "balance", bridge: bridgeVersion, nonce, type: "ping" }, peerOrigin);
+      return;
+    }
+    if (event.source !== peer || event.origin !== peerOrigin) return;
+    if (msg.type === "error") {
+      done(new Error(msg.message || "El servidor ha rechazado la comprobación"));
+    } else if (msg.type === "pong") {
+      const response = msg.result;
+      if (!response?.ok || response.app !== "Balance" ||
+          response.version !== "0.4.0-bridge-test") {
+        done(new Error("El servidor no tiene publicada la versión 0.4.0-bridge-test"));
+      } else {
+        done(null, response);
+      }
+    }
+  };
+
+  window.addEventListener("message", onBridgeMessage);
+  const timer = setTimeout(() => done(new Error(
+    "No se ha recibido respuesta. Comprueba que has creado Bridge.html y publicado una nueva versión de Apps Script. Algunos navegadores pueden bloquear el iframe."
+  )), 20000);
+  frame.src = url.toString();
+  document.body.appendChild(frame);
+}
+
 function bindEvents() {
+  $("check-bridge").addEventListener("click", testPrivateBridge);
   $("check-backend").addEventListener("click", testBackendConnection);
   $("account-test-form").addEventListener("submit", testAccountPassword);
   document.querySelectorAll("[data-route]").forEach(button =>
