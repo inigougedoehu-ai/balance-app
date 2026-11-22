@@ -1,5 +1,5 @@
-const CACHE_NAME = "balance-private-v7";
-const CORE = ["./", "./index.html", "./private.html", "./styles.css", "./app.js", "./private-app.js", "./lib/bridge.js", "./lib/vault.js", "./lib/sync.js", "./lib/ui.js", "./lib/forms.js", "./manifest.webmanifest", "./icon.svg"];
+const CACHE_NAME = "balance-private-v8";
+const CORE = ["./", "./index.html", "./private.html", "./styles.css", "./private-app.js", "./lib/bridge.js", "./lib/vault.js", "./lib/sync.js", "./lib/ui.js", "./lib/forms.js", "./manifest.webmanifest", "./icon.svg"];
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
 });
