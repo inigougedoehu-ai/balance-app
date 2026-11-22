@@ -16,6 +16,34 @@ La interfaz inicial permite:
 
 Los registros se guardan exclusivamente en **IndexedDB, en el navegador actual**. Todavía no existen autenticación, separación de usuarios, cifrado local ni sincronización con Sheets. Los datos locales se pueden perder si se borran los datos del navegador. **No introduzcas datos reales de salud en esta versión.**
 
+## Nueva vista privada en pruebas (0.5)
+
+La versión clásica de Balance sigue en `index.html`. Para probar el acceso privado y la sincronización, abre `private.html` **solo después de actualizar Apps Script**.
+
+### Preparación
+
+1. Abre el proyecto de Apps Script vinculado a `Balance - Base de datos`.
+2. Reemplaza el archivo `Code.gs` completo con `backend/Code.gs` de este repositorio.
+3. Reemplaza el archivo HTML `Bridge.html` con `backend/Bridge.html`. No es necesario repetir `provisionAccounts`: las cuentas ya están creadas.
+4. Guarda ambos archivos. En **Implementar → Gestionar implementaciones → Editar**, selecciona **Nueva versión** y publica conservando la URL `/exec`.
+5. Prueba `https://inigougedoehu-ai.github.io/balance-app/private.html`. Accede con las contraseñas establecidas y registra **solo datos ficticios**. Comprueba la sincronización al recargar y abrir otra cuenta.
+
+### Aislamiento
+
+- Cada operación se autentica en Apps Script mediante un token de sesión temporal y se vincula al usuario derivado del token, **no** a un userId proporcionado por la web.
+- La sesión solo se conserva en memoria, por lo que al cerrar o recargar es necesario introducir la contraseña de nuevo.
+- Los datos locales se cifran con AES-GCM y clave derivada de la contraseña (PBKDF2). Se almacenan en una base IndexedDB distinta de la antigua versión de prueba.
+- Los datos de prueba de la versión antigua **no se importan** al nuevo almacén.
+- La cola de cambios tiene UUID únicos para no crear registros duplicados tras reintentos.
+- La copia local puede abrirse sin conexión cuando el dispositivo ya ha accedido antes, pero para sincronizar será necesario iniciar sesión con internet.
+- La hoja de cálculo sigue siendo legible para la cuenta Google propietaria.
+
+### Limitaciones de esta fase
+
+**No introducir todavía datos personales reales hasta validar manualmente el funcionamiento con las dos cuentas, las ediciones, los borrados y la recuperación en otro dispositivo.** La sincronización es idempotente y usa última operación recibida para resolver cambios concurrentes; no implementa todavía resolución avanzada de conflictos ni borrado de datos de prueba.
+
+Si cambias la contraseña de una cuenta, su copia local cifrada seguirá necesitando la contraseña anterior: exporta o sincroniza antes de cambiar contraseñas y no borres datos pendientes.
+
 ## Fase 4: prueba del canal privado con HTMLService
 
 Esta fase solo prueba una alternativa a JSONP para operaciones privadas, sin modificar pesos ni comidas.
