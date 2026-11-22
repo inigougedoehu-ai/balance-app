@@ -7,6 +7,24 @@ import {createForms} from "./lib/forms.js";
 const $=id=>document.getElementById(id);
 const REQUIRED_VERSION="0.5.0-private-sync";
 let vault=null,session=null,synchronizer=null,forms=null,loginBusy=false;
+let lastMainView="peso";
+function closeUserMenu(){
+  const panel=$("user-menu-panel"),button=$("user-menu-trigger");
+  if(!panel||!button)return;
+  panel.hidden=true;
+  button.setAttribute("aria-expanded","false");
+}
+function toggleUserMenu(){
+  const panel=$("user-menu-panel"),button=$("user-menu-trigger");
+  const open=panel.hidden;
+  panel.hidden=!open;
+  button.setAttribute("aria-expanded",String(open));
+}
+function navigate(view){
+  if(view==="peso"||view==="comidas")lastMainView=view;
+  closeUserMenu();
+  route(view);
+}
 
 function refreshStatus(message,kind){status("sync-status",message,kind)}
 function afterSave(){
@@ -49,9 +67,12 @@ async function login(event){
     $("main-content").hidden=false;
     $("user-actions").hidden=false;
     $("account-label").textContent=userId==="inigo"?"Iñigo":"Clara";
+    $("account-avatar").textContent=userId==="inigo"?"I":"C";
+    $("user-menu-trigger").setAttribute("aria-label","Menú de "+(userId==="inigo"?"Iñigo":"Clara"));
+    closeUserMenu();
     forms.reset();
     forms.repaint();
-    route("inicio");
+    navigate("peso");
     synchronizer=authenticated
       ?createSynchronizer(vault,session,forms.repaint,(msg,kind)=>refreshStatus(msg,kind))
       :null;
@@ -70,6 +91,7 @@ async function login(event){
   }
 }
 async function signOut(){
+  closeUserMenu();
   if(synchronizer?.isBusy()){
     toast("Espera a que termine la sincronización antes de salir.");
     return;
@@ -95,11 +117,27 @@ async function start(){
     forms=createForms(()=>vault,afterSave);
     $("login-form").addEventListener("submit",login);
     $("logout").addEventListener("click",signOut);
-    $("sync-now").addEventListener("click",syncNow);
+    $("sync-now").addEventListener("click",()=>{
+      closeUserMenu();
+      syncNow();
+    });
+    $("user-menu-trigger").addEventListener("click",toggleUserMenu);
+    $("open-settings").addEventListener("click",()=>navigate("ajustes"));
+    $("settings-back").addEventListener("click",()=>navigate(lastMainView));
+    $("brand-home").addEventListener("click",()=>{if(vault)navigate("peso")});
+    document.addEventListener("pointerdown",event=>{
+      if(!$("user-actions").contains(event.target))closeUserMenu();
+    });
+    document.addEventListener("keydown",event=>{
+      if(event.key==="Escape"&&!$("user-menu-panel").hidden){
+        closeUserMenu();
+        $("user-menu-trigger").focus();
+      }
+    });
     document.querySelectorAll("[data-route]").forEach(el=>
       el.addEventListener("click",event=>{
         event.preventDefault();
-        if(vault)route(el.dataset.route);
+        if(vault)navigate(el.dataset.route);
       }));
     window.addEventListener("online",syncNow);
     document.addEventListener("visibilitychange",()=>{

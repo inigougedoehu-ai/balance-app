@@ -98,3 +98,34 @@ button:disabled{cursor:wait;opacity:.62}
   .user-actions .text-button{font-size:12px;padding:5px}
   .user-actions .environment{font-size:11px;padding:8px}
 }
+
+/* Navegación compacta: Peso y Comidas, ajustes en el menú personal. */
+.brand-button{border:0;background:none;padding:0;font-family:inherit;cursor:pointer}
+.user-actions{position:relative}
+.user-trigger{display:inline-flex;align-items:center;gap:10px;border:1px solid #e1e8e1;background:#fff;color:#345a4c;border-radius:40px;padding:6px 11px 6px 6px;min-height:44px;font-size:13px;font-weight:700;box-shadow:0 2px 9px rgba(27,54,42,.035)}
+.user-trigger:hover,.user-trigger[aria-expanded="true"]{background:#f3f8f4;border-color:#bdd6c6}
+.user-avatar{width:31px;height:31px;flex:none;display:grid;place-items:center;background:#385e54;border-radius:50%;color:#fff;font-weight:750}
+.user-chevron{font-size:20px;font-weight:400;line-height:1;margin-left:3px;transform:translateY(-2px)}
+.user-menu-panel{position:absolute;top:calc(100% + 10px);right:0;z-index:50;width:230px;max-width:calc(100vw - 35px);padding:7px;background:#fff;border:1px solid #e1e8e1;border-radius:15px;box-shadow:0 15px 35px rgba(29,49,38,.12)}
+.user-menu-item{display:block;width:100%;padding:13px 12px;border:0;border-radius:9px;background:transparent;color:#2e463b;text-align:left;font-size:14px;font-weight:590;min-height:44px}
+.user-menu-item:hover,.user-menu-item:focus-visible{background:#eef5ef}
+.user-menu-divider{height:1px;background:#edf0eb;margin:6px 4px}
+.user-menu-exit{color:#9a4c3e}
+.main-nav{gap:6px;margin-bottom:32px}
+.nav-item{min-width:100px;text-align:center}
+.weight-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.weight-summary-item{display:flex;flex-direction:column;gap:5px;background:#fff;border:1px solid #ebece7;border-radius:15px;padding:17px 21px;min-width:0}
+.weight-summary-item>span{font-size:12px;color:#788a7f;font-weight:630}
+.weight-summary-item>strong{font-size:27px;letter-spacing:-.8px;font-weight:700;color:#2f5647;line-height:1.25;margin-top:2px}
+.weight-summary-item>small{color:#85938a;font-size:12px;line-height:1.5}
+.back-button{border:0;background:transparent;color:#456e5a;font-size:13px;font-weight:650;padding:7px 0;margin:0 0 15px;min-height:40px}
+.back-button:hover{color:#234d3a}
+@media(max-width:710px){
+  .user-trigger{gap:7px;padding:5px 9px 5px 5px}
+  .user-avatar{width:30px;height:30px}
+  .main-nav{justify-content:flex-start;margin-bottom:23px}
+  .nav-item{flex:1;max-width:200px;padding:12px 17px;font-size:14px}
+  .weight-summary{gap:9px}
+  .weight-summary-item{padding:14px;min-height:112px}
+  .weight-summary-item>strong{font-size:24px}
+}

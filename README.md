@@ -6,6 +6,8 @@ Aplicación web personal para registrar el peso, las comidas y un objetivo de pe
 
 ## Funcionalidades
 
+La aplicación tiene dos apartados principales: **Peso** y **Comidas**. El nombre de la cuenta, situado en la parte superior, abre el menú con **Ajustes**, **Sincronizar ahora** y **Cerrar sesión**. El objetivo personal, el estado de sincronización y la exportación se encuentran dentro de Ajustes.
+
 - Inicio de sesión independiente para Iñigo y Clara.
 - Registro, edición y borrado de pesajes con fecha, historial y gráfica.
 - Registro de comidas por fecha y tipo, con descripción y notas opcionales, sin cálculo de calorías.

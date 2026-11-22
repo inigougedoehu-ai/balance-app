@@ -15,14 +15,23 @@
 <body>
   <div class="shell">
     <header class="topbar">
-      <a class="brand" href="./" aria-label="Balance, inicio">
+      <button class="brand brand-button" id="brand-home" type="button" aria-label="Ir a Peso">
         <span class="brand-mark" aria-hidden="true">b<span class="brand-dot">.</span></span>
         <span>balance</span>
-      </a>
+      </button>
       <div class="user-actions" id="user-actions" hidden>
-        <span class="environment" id="account-label">Cuenta privada</span>
-        <button type="button" id="sync-now" class="text-button">Sincronizar</button>
-        <button type="button" id="logout" class="text-button">Salir</button>
+        <button type="button" class="user-trigger" id="user-menu-trigger"
+          aria-haspopup="true" aria-expanded="false" aria-controls="user-menu-panel">
+          <span class="user-avatar" id="account-avatar" aria-hidden="true">I</span>
+          <span id="account-label">Cuenta</span>
+          <span class="user-chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div class="user-menu-panel" id="user-menu-panel" hidden>
+          <button type="button" class="user-menu-item" id="open-settings">Ajustes</button>
+          <button type="button" class="user-menu-item" id="sync-now">Sincronizar ahora</button>
+          <div class="user-menu-divider" role="separator"></div>
+          <button type="button" class="user-menu-item user-menu-exit" id="logout">Cerrar sesión</button>
+        </div>
       </div>
     </header>
 
@@ -49,58 +58,28 @@
     </section>
 
     <nav class="main-nav" aria-label="Secciones" hidden>
-      <button type="button" class="nav-item active" data-route="inicio" aria-current="page">Inicio</button>
-      <button type="button" class="nav-item" data-route="peso">Peso</button>
+      <button type="button" class="nav-item active" data-route="peso" aria-current="page">Peso</button>
       <button type="button" class="nav-item" data-route="comidas">Comidas</button>
-      <button type="button" class="nav-item" data-route="objetivo">Ajustes</button>
     </nav>
 
     <main id="main-content" hidden>
-      <section class="view" data-view="inicio">
-        <div class="page-head">
-          <span class="eyebrow">TU SEGUIMIENTO</span>
-          <h1>Un pequeño paso cada día.</h1>
-          <p>Lleva un registro de tus hábitos con tranquilidad, a tu manera.</p>
-        </div>
-        <div class="stats-grid">
-          <article class="stat-card">
-            <span class="stat-label">Último peso registrado</span>
-            <strong id="metric-weight" class="stat-value">—</strong>
-            <span id="metric-weight-date" class="stat-helper">Aún no hay registros</span>
-          </article>
-          <article class="stat-card">
-            <span class="stat-label">Objetivo personal</span>
-            <strong id="metric-goal" class="stat-value">—</strong>
-            <span id="metric-goal-info" class="stat-helper">Puedes definirlo cuando quieras</span>
-          </article>
-          <article class="stat-card">
-            <span class="stat-label">Comidas registradas</span>
-            <strong id="metric-meals" class="stat-value">0</strong>
-            <span class="stat-helper">Sin contar calorías</span>
-          </article>
-        </div>
-        <div class="feature-grid">
-          <article class="feature-card">
-            <span class="feature-icon weight-icon" aria-hidden="true">⚖</span>
-            <h2>Registra tu peso</h2>
-            <p>Anota tus pesajes y descubre cómo va cambiando tu evolución.</p>
-            <button class="action-button" type="button" data-route="peso">Añadir peso <span aria-hidden="true">↗</span></button>
-          </article>
-          <article class="feature-card">
-            <span class="feature-icon meal-icon" aria-hidden="true">✳</span>
-            <h2>Registra tus comidas</h2>
-            <p>Apunta lo que has comido con un formulario sencillo.</p>
-            <button class="action-button" type="button" data-route="comidas">Añadir comida <span aria-hidden="true">↗</span></button>
-          </article>
-        </div>
-        <div class="storage-hint" id="local-count">Todos los cambios se guardan en este dispositivo.</div>
-      </section>
-
-      <section class="view" data-view="peso" hidden>
+      <section class="view" data-view="peso">
         <div class="page-head">
           <span class="eyebrow">SEGUIMIENTO</span>
-          <h1>Tu peso, con perspectiva.</h1>
-          <p>Registra los datos y observa la tendencia sin obsesionarte con los cambios diarios.</p>
+          <h1>Tu peso</h1>
+          <p>Registra tus pesajes y consulta su evolución.</p>
+        </div>
+        <div class="weight-summary" aria-label="Resumen de peso">
+          <div class="weight-summary-item">
+            <span>Último peso</span>
+            <strong id="metric-weight">—</strong>
+            <small id="metric-weight-date">Aún no hay registros</small>
+          </div>
+          <div class="weight-summary-item">
+            <span>Objetivo</span>
+            <strong id="metric-goal">—</strong>
+            <small id="metric-goal-info">Puedes definirlo en Ajustes</small>
+          </div>
         </div>
         <div class="content-grid">
           <article class="panel">
@@ -127,9 +106,9 @@
 
       <section class="view" data-view="comidas" hidden>
         <div class="page-head">
-          <span class="eyebrow">HÁBITOS</span>
-          <h1>Lo que comes, sin cálculos.</h1>
-          <p>Un registro sencillo de tus comidas. Sin calorías ni cantidades obligatorias.</p>
+          <span class="eyebrow">REGISTRO</span>
+          <h1>Tus comidas</h1>
+          <p>Anota tus comidas y consulta lo que has registrado.</p>
         </div>
         <div class="content-grid">
           <article class="panel">
@@ -156,11 +135,12 @@
         </div>
       </section>
 
-      <section class="view" data-view="objetivo" hidden>
+      <section class="view" data-view="ajustes" hidden>
+        <button type="button" class="back-button" id="settings-back">← Volver</button>
         <div class="page-head">
-          <span class="eyebrow">CONFIGURACIÓN PERSONAL</span>
-          <h1>Tu objetivo, a tu medida.</h1>
-          <p>Puedes establecer un objetivo de referencia y cambiarlo en cualquier momento.</p>
+          <span class="eyebrow">TU CUENTA</span>
+          <h1>Ajustes</h1>
+          <p>Configura tu objetivo y gestiona tus datos.</p>
         </div>
         <article class="panel settings-panel">
           <h2>Objetivo de peso</h2>
@@ -184,7 +164,7 @@
         </article>
       </section>
     </main>
-    <footer>Balance · Seguimiento personal</footer>
+    <footer>Balance</footer>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <script type="module" src="./private-app.js"></script>
