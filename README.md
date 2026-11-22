@@ -52,6 +52,14 @@ La navegación principal tiene únicamente **Peso** y **Comidas**. El botón flo
 
 No se necesitan cambios nuevos en Apps Script para estas funciones. Para guardar altura y fecha de nacimiento, sigue siendo necesario tener publicada la versión `0.6.0-health-profile` del backend.
 
+## Personalización del color
+
+En **nombre de usuario → Ajustes → Apariencia** se puede seleccionar uno de los nueve colores: **verde, azul, rojo, rosa, morado, turquesa, naranja, mostaza y grafito**.
+
+La selección se refleja inmediatamente en el logotipo, los botones, las tarjetas destacadas, la navegación, el gráfico y los controles interactivos. Cada cuenta recuerda su elección en el almacenamiento local del navegador, con una clave distinta para Iñigo y Clara. Al cerrar sesión se recupera el verde predeterminado en la pantalla de acceso.
+
+**Importante:** es una preferencia visual local al dispositivo y navegador; no se sincroniza mediante Google Sheets. No modifica los datos de peso, comidas, altura, nacimiento ni las operaciones pendientes. Si se borran los datos del sitio, se recupera el verde por defecto. El icono ya instalado de la PWA conserva el icono original.
+
 ## Instalación en iPhone
 
 En Safari, abrir la dirección principal de Balance y seleccionar **Compartir → Añadir a pantalla de inicio**. El manifiesto usa `start_url: "./"`, por lo que el icono abre el inicio de sesión sin añadir un nombre de archivo al enlace.
