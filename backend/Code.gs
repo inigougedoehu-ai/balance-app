@@ -12,7 +12,7 @@
  * pegar todo este archivo en Code.gs y ejecutar setupDatabase una vez.
  */
 
-const BALANCE_VERSION = "0.6.0-health-profile";
+const BALANCE_VERSION = "0.7.0-diary-extras";
 
 const BALANCE_TABLES = Object.freeze({
   Users: [
@@ -37,6 +37,10 @@ const BALANCE_TABLES = Object.freeze({
   Sessions: [
     "session_hash", "user_id", "created_at", "expires_at",
     "revoked_at"
+  ],
+  Extras: [
+    "record_id", "user_id", "kind", "date", "data_json",
+    "created_at", "updated_at", "deleted_at"
   ]
 });
 
@@ -475,6 +479,18 @@ function readState_(book, userId) {
       .filter(function (r) { return String(r[1]) === userId && !r[8]; })
       .map(mealFromRow_)
     : [];
+  const extrasSheet = ensureExtrasSheet_(book);
+  const extras = extrasSheet.getLastRow() > 1
+    ? extrasSheet.getRange(2, 1, extrasSheet.getLastRow() - 1, 8).getValues()
+      .filter(function(r){ return String(r[1]) === userId && !r[7]; })
+      .map(function(r){
+        var data = JSON.parse(String(r[4] || "{}"));
+        return Object.assign({
+          id:String(r[0]), kind:String(r[2]), date:dateText_(r[3]),
+          createdAt:String(r[5]),updatedAt:String(r[6])
+        },data);
+      })
+    : [];
   let goal = null;
   let heightCm = null;
   let birthDate = null;
@@ -488,7 +504,7 @@ function readState_(book, userId) {
     }
   }
   return {
-    ok: true, weights: weights, meals: meals, goal: goal,
+    ok: true, weights: weights, meals: meals, extras: extras, goal: goal,
     heightCm: heightCm, birthDate: birthDate, serverAt: new Date().toISOString()
   };
 }
@@ -534,7 +550,7 @@ function assertOp_(op) {
     }
     return;
   }
-  if (!["weight", "meal"].includes(op.kind) ||
+  if (!["weight", "meal", "measure", "day_note", "favorite"].includes(op.kind) ||
       !["upsert", "delete"].includes(op.action) ||
       !/^[0-9a-f-]{36}$/i.test(String(op.recordId || ""))) {
     throw new Error("Operación no válida");
@@ -555,13 +571,28 @@ function assertOp_(op) {
     if (!Number.isFinite(record.value) || record.value < 15 || record.value > 500) {
       throw new Error("Peso no válido");
     }
-  } else {
+  } else if (op.kind === "meal" || op.kind === "favorite") {
     if (!["Desayuno", "Media mañana", "Comida", "Merienda", "Cena", "Otro"].includes(record.type) ||
         typeof record.description !== "string" ||
         !record.description.trim() || record.description.length > 400 ||
         typeof record.notes !== "string" || record.notes.length > 600) {
-      throw new Error("Comida no válida");
+      throw new Error("Comida o favorito no válido");
     }
+  } else if (op.kind === "day_note") {
+    if (typeof record.text !== "string" || !record.text.trim() ||
+        record.text.length > 1000) throw new Error("Nota diaria no válida");
+  } else if (op.kind === "measure") {
+    var fields = ["waistCm","hipCm","chestCm","armCm"];
+    var atLeastOne = false;
+    fields.forEach(function(field){
+      var v = record[field];
+      if (v !== null && v !== undefined) {
+        if (!Number.isFinite(v) || v < 10 || v > 250) throw new Error("Medida fuera de rango");
+        atLeastOne = true;
+      }
+    });
+    if (!atLeastOne || typeof record.notes !== "string" || record.notes.length > 400)
+      throw new Error("Registro de medidas no válido");
   }
 }
 
@@ -634,6 +665,57 @@ function applyProfile_(book, userId, op, now) {
   }
 }
 
+/**
+ * Las colecciones adicionales se alojan en una pestaña propia. Esta función
+ * crea solo la pestaña nueva; nunca cambia las columnas de Weights, Meals o Settings.
+ */
+function ensureExtrasSheet_(book) {
+  var sheet = book.getSheetByName("Extras");
+  var headers = BALANCE_TABLES.Extras;
+  if (!sheet) sheet = book.insertSheet("Extras");
+  if (sheet.getLastRow() === 0) {
+    sheet.getRange(1,1,1,headers.length).setValues([headers]);
+    sheet.setFrozenRows(1);
+    sheet.getRange(1,1,1,headers.length)
+      .setBackground("#385e54").setFontColor("#ffffff").setFontWeight("bold");
+  } else {
+    var current = sheet.getRange(1,1,1,headers.length).getValues()[0];
+    if (JSON.stringify(current) !== JSON.stringify(headers))
+      throw new Error("La pestaña Extras tiene columnas incompatibles; no se modifica.");
+  }
+  return sheet;
+}
+
+function applyExtra_(book,userId,op,now) {
+  var sheet = ensureExtrasSheet_(book);
+  var rows = sheet.getLastRow() > 1
+    ? sheet.getRange(2,1,sheet.getLastRow()-1,2).getValues() : [];
+  var index = rows.findIndex(function(row){
+    return String(row[0]) === op.recordId && String(row[1]) === userId;
+  });
+  var rowNum = index >= 0 ? index + 2 : -1;
+  if (op.action === "delete") {
+    if (rowNum > 0) sheet.getRange(rowNum,7,1,2).setValues([[now,now]]);
+    return;
+  }
+  var rec = op.record;
+  var created = rowNum > 0 ? sheet.getRange(rowNum,6).getValue() || now : now;
+  var data = {};
+  if (op.kind === "measure") {
+    ["waistCm","hipCm","chestCm","armCm","notes"].forEach(function(field){
+      data[field] = rec[field] === undefined ? null : rec[field];
+    });
+    if (data.notes === null) data.notes = "";
+  } else if (op.kind === "day_note") {
+    data.text = rec.text;
+  } else {
+    data.type = rec.type;data.description=rec.description;data.notes=rec.notes;
+  }
+  var values=[op.recordId,userId,op.kind,"'"+rec.date,JSON.stringify(data),created,now,""];
+  if(rowNum > 0) sheet.getRange(rowNum,1,1,8).setValues([values]);
+  else sheet.appendRow(values);
+}
+
 function balanceApplyOperations(token, ops) {
   if (!Array.isArray(ops) || ops.length === 0 || ops.length > MAX_BATCH_) {
     throw new Error("Lote de sincronización no válido");
@@ -657,6 +739,8 @@ function balanceApplyOperations(token, ops) {
         const now = new Date().toISOString();
         if (op.kind === "goal") applyGoal_(book, userId, op, now);
         else if (op.kind === "profile") applyProfile_(book, userId, op, now);
+        else if (["measure","day_note","favorite"].includes(op.kind))
+          applyExtra_(book,userId,op,now);
         else applyEntry_(book, userId, op, now);
         // El marcador se guarda después de aplicar el cambio.
         history.appendRow([op.id, userId, op.kind, op.recordId || "", op.action, now]);
