@@ -327,8 +327,75 @@ async function testBackendConnection() {
   }
 }
 
+/**
+ * Solo prueba la contraseña; NO entrega tokens ni crea una sesión.
+ * La contraseña se envía por HTTPS en un POST y no se guarda localmente.
+ */
+async function testAccountPassword(event) {
+  event.preventDefault();
+  const button = $("account-test-submit");
+  const status = $("account-test-status");
+  const passwordInput = $("account-password");
+  const password = passwordInput.value;
+  const userId = $("account-name").value;
+  if (!["inigo", "clara"].includes(userId) || password.length < 14) {
+    status.dataset.state = "error";
+    status.textContent = "Comprueba la cuenta y la longitud de la contraseña.";
+    return;
+  }
+  const requestId = crypto.randomUUID().replaceAll("-", "");
+  button.disabled = true;
+  status.dataset.state = "working";
+  status.textContent = "Comprobando la contraseña con Apps Script…";
+  try {
+    await fetch(BACKEND_URL, {
+      method: "POST",
+      mode: "no-cors",
+      credentials: "omit",
+      redirect: "follow",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({
+        action: "account_test", request_id: requestId,
+        user_id: userId, password
+      })
+    });
+    // No conservar la contraseña en el formulario.
+    passwordInput.value = "";
+    let resultStatus = "pending";
+    for (let attempt = 0; attempt < 8; attempt++) {
+      await pause(700 + attempt * 300);
+      const result = await publicDiagnostic("account_test_status", { request_id: requestId });
+      if (!result?.ok) throw new Error("No se pudo consultar la comprobación.");
+      if (["valid", "invalid", "limited"].includes(result.status)) {
+        resultStatus = result.status;
+        break;
+      }
+    }
+    if (resultStatus === "valid") {
+      status.dataset.state = "success";
+      status.textContent = "Contraseña reconocida para " + (userId === "inigo" ? "Iñigo" : "Clara") + ". Esta prueba aún no inicia sesión.";
+    } else if (resultStatus === "invalid") {
+      status.dataset.state = "error";
+      status.textContent = "La contraseña no coincide. Revisa cuál configuraste en Apps Script.";
+    } else if (resultStatus === "limited") {
+      status.dataset.state = "error";
+      status.textContent = "Demasiados intentos: espera unos diez minutos antes de volver a probar.";
+    } else {
+      throw new Error("El servidor no confirmó la validación.");
+    }
+  } catch (error) {
+    passwordInput.value = "";
+    status.dataset.state = "error";
+    status.textContent = "Error de comprobación: " + (error?.message || "desconocido");
+    console.error("Balance - prueba de cuentas:", error);
+  } finally {
+    button.disabled = false;
+  }
+}
+
 function bindEvents() {
   $("check-backend").addEventListener("click", testBackendConnection);
+  $("account-test-form").addEventListener("submit", testAccountPassword);
   document.querySelectorAll("[data-route]").forEach(button =>
     button.addEventListener("click", (event) => { event.preventDefault(); route(button.dataset.route); })
   );
