@@ -3,6 +3,7 @@ import {unlock} from "./lib/vault.js";
 import {createSynchronizer} from "./lib/sync.js";
 import {route,status,toast} from "./lib/ui.js";
 import {createForms} from "./lib/forms.js";
+import {applyTheme,loadTheme,initThemeSelector} from "./lib/theme.js";
 
 const $=id=>document.getElementById(id);
 const SUPPORTED_VERSIONS=["0.5.0-private-sync","0.6.0-health-profile"];
@@ -121,6 +122,7 @@ async function login(event){
     }
     const opened=await unlock(userId,password,authenticated);
     vault=opened;
+    loadTheme(userId);
     session=authenticated?token:null;
     $("login-password").value="";
     $("login-screen").hidden=true;
@@ -166,6 +168,7 @@ async function signOut(){
   composer?.hide();
   const oldToken=session;
   vault=null;session=null;synchronizer=null;profileReady=false;
+  applyTheme("verde");
   $("login-screen").hidden=false;
   document.querySelector(".main-nav").hidden=true;
   $("main-content").hidden=true;
@@ -184,6 +187,10 @@ async function start(){
     if(!window.indexedDB||!crypto.subtle)throw Error("Este navegador no ofrece cifrado ni almacenamiento local.");
     composer=createComposer();
     forms=createForms(()=>vault,afterSave,()=>profileReady,composer);
+    initThemeSelector(()=>vault?.userId,(_color,stored)=>{
+      forms?.repaint();
+      if(!stored)toast("Color aplicado, pero el navegador no pudo recordar la preferencia.");
+    });
     $("login-form").addEventListener("submit",login);
     $("logout").addEventListener("click",signOut);
     $("sync-now").addEventListener("click",()=>{
