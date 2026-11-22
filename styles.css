@@ -441,3 +441,125 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   .health-item>strong{font-size:17px}
   .meal-filter-label{max-width:138px}
 }
+
+
+/* Registro rápido: vistas sin formularios permanentes. */
+.weight-content-grid,.meal-content-grid{display:block;min-width:0}
+.weight-content-grid>.graph-panel,.meal-content-grid>.record-panel{width:100%;max-width:none}
+.weight-content-grid>.graph-panel{min-height:355px}
+.weight-content-grid>.graph-panel .chart-container{min-height:245px}
+.chart-header{align-items:center;gap:14px}
+.chart-header>div{min-width:0}
+.chart-header h2{margin:0 0 4px}
+.chart-header>div>span{display:block;text-align:left;white-space:normal}
+.chart-period-label{flex:none;max-width:130px;margin:0}
+.chart-period-label select{min-height:39px;padding:7px 29px 7px 10px;border-radius:9px;font-size:12px}
+.chart-point-detail{
+  color:#64796c;font-size:12px;min-height:19px;
+  text-align:right;margin-top:3px;font-weight:650;
+}
+.day-heading{
+  margin:21px 0 6px;padding:8px 0 6px;border-bottom:1px solid #e5ebe5;
+  font-size:12px;letter-spacing:.14px;color:#698071;font-weight:760;
+}
+.day-heading:first-child{margin-top:2px}
+.record-list>.day-heading+.record{border-top:0}
+.toast{display:flex;align-items:center;gap:16px;justify-content:space-between}
+.toast-action{
+  padding:7px 0 7px 10px;margin:0;border:0;background:transparent;
+  color:#dcf5df;font-size:13px;font-weight:790;text-decoration:underline;
+  text-underline-offset:3px;white-space:nowrap
+}
+.last-confirmed{
+  font-size:12px!important;color:#687c6d!important;margin-bottom:10px!important
+}
+/* Botón de añadir: fijo sobre el área segura del iPhone. */
+.fab-add{
+  position:fixed;z-index:50;
+  right:max(20px,env(safe-area-inset-right,0px));
+  bottom:calc(21px + env(safe-area-inset-bottom,0px));
+  display:grid;place-items:center;width:60px;height:60px;
+  border:0;border-radius:50%;background:#244d3e;color:white;
+  box-shadow:0 7px 26px rgba(25,55,38,.23);
+  transition:background-color .15s,transform .15s;
+}
+.fab-add span{font-size:36px;line-height:1;font-weight:380;transform:translateY(-2px)}
+.fab-add:hover{background:#173c2d}
+.fab-add:active{transform:scale(.96)}
+/* Hoja inferior compartida, un solo formulario por tipo. */
+body.composer-open{overflow:hidden}
+.composer-overlay{
+  position:fixed;inset:0;z-index:100;
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.composer-backdrop{position:absolute;inset:0;background:rgba(19,37,28,.37)}
+.composer-sheet{
+  position:relative;z-index:1;width:min(100%,570px);
+  max-height:min(88dvh,850px);overflow-y:auto;overscroll-behavior:contain;
+  background:#fff;border:1px solid #e1e7df;border-bottom:0;
+  border-radius:23px 23px 0 0;box-shadow:0 -14px 45px rgba(17,42,28,.17);
+  padding:0 25px calc(25px + env(safe-area-inset-bottom,0px));
+}
+.composer-handle{width:38px;height:4px;margin:10px auto 13px;border-radius:4px;background:#d9e2d9}
+.composer-topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:9px 0 19px;border-bottom:1px solid #edf0ec;margin-bottom:15px
+}
+.composer-topbar h2{font-size:18px;font-weight:730;margin:0}
+.composer-close{
+  border:0;background:#f0f3ef;color:#465b4d;border-radius:50%;
+  width:36px;height:36px;font-size:25px;font-weight:350;line-height:1
+}
+.composer-close:hover{background:#e4eee4}
+.composer-content{min-width:0}
+.composer-menu{display:flex;flex-direction:column;gap:7px;padding:3px 0 9px}
+.composer-choice{
+  display:flex;align-items:center;gap:15px;width:100%;min-height:78px;
+  background:#fff;border:1px solid #e1e7df;border-radius:13px;
+  padding:14px;text-align:left;color:#1f382b
+}
+.composer-choice:hover{background:#f4f8f3;border-color:#bdd1c0}
+.composer-choice-icon{
+  width:46px;height:46px;border-radius:13px;background:#eaf2ea;
+  color:#2f6149;display:grid;place-items:center;flex:none;
+  font-size:25px;line-height:1;font-weight:500
+}
+.composer-choice>span:nth-child(2){flex:1;min-width:0}
+.composer-choice strong{display:block;font-size:14px;font-weight:720;line-height:1.5}
+.composer-choice small{display:block;color:#77897d;font-size:12px;margin-top:3px;line-height:1.4}
+.composer-choice-chevron{font-size:25px;font-weight:350;color:#8da193}
+.composer-sheet .panel{
+  border:0;box-shadow:none;border-radius:0;padding:0;margin:0;background:transparent
+}
+.composer-sheet .panel>h2{display:none}
+.composer-sheet .form-stack{padding:0 0 4px}
+.composer-sheet .primary-button{margin-top:21px}
+.composer-sheet .text-button{margin-top:9px}
+.composer-sheet .form-stack input[type="date"]{max-width:100%;min-width:0}
+.meal-suggestions{padding:3px 0 16px;border-bottom:1px solid #edf0ec;margin-bottom:16px}
+.meal-suggestions h3{font-size:12px;color:#6a7f71;font-weight:760;margin:0 0 10px}
+.meal-suggestions-list{display:flex;gap:8px;overflow-x:auto;padding:0 0 3px;scrollbar-width:thin}
+.meal-suggestion{
+  flex:0 0 auto;max-width:210px;min-height:48px;
+  display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+  gap:2px;padding:9px 11px;background:#f5f8f4;border:1px solid #e0e8df;
+  border-radius:10px;text-align:left
+}
+.meal-suggestion:hover{background:#eaf3e9;border-color:#bcd1bb}
+.meal-suggestion strong{font-size:12px;font-weight:660;color:#294b38;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:185px}
+.meal-suggestion small{font-size:10px;color:#7b907f}
+@media(max-width:710px){
+  .weight-content-grid>.graph-panel{min-height:300px}
+  .fab-add{width:58px;height:58px;right:20px;bottom:calc(19px + env(safe-area-inset-bottom,0px))}
+  .fab-add span{font-size:35px}
+  .composer-sheet{max-height:90dvh;padding:0 20px calc(21px + env(safe-area-inset-bottom,0px));border-radius:21px 21px 0 0}
+  .composer-topbar{padding-bottom:15px}
+  .chart-header{flex-wrap:wrap}
+  .chart-header .chart-period-label{margin-left:auto}
+  .day-heading{margin-top:17px}
+  .record-actions button{padding:8px 7px}
+}
+@media(max-width:370px){
+  .composer-sheet{padding-left:16px;padding-right:16px}
+  .fab-add{right:15px}
+}

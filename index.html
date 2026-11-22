@@ -104,7 +104,7 @@
             <small>Solo días con pesajes</small>
           </div>
         </div>
-        <div class="content-grid">
+        <div class="content-grid weight-content-grid">
           <article class="panel">
             <h2 id="weight-form-title">Nuevo pesaje</h2>
             <form id="weight-form" class="form-stack">
@@ -120,8 +120,20 @@
             </form>
           </article>
           <article class="panel graph-panel">
-            <div class="section-title"><h2>Evolución</h2><span id="weight-trend">Sin datos</span></div>
+            <div class="section-title chart-header">
+              <div><h2>Evolución</h2><span id="weight-trend">Sin datos</span></div>
+              <label class="chart-period-label" for="chart-period">
+                <span class="visually-hidden">Periodo de la gráfica</span>
+                <select id="chart-period">
+                  <option value="30">30 días</option>
+                  <option value="90" selected>90 días</option>
+                  <option value="365">1 año</option>
+                  <option value="all">Todo</option>
+                </select>
+              </label>
+            </div>
             <div id="weight-chart" class="chart-container"><p class="empty-state">Aquí aparecerá tu gráfica cuando registres pesajes.</p></div>
+            <div id="chart-point-detail" class="chart-point-detail" role="status" aria-live="polite"></div>
           </article>
         </div>
         <article class="panel record-panel">
@@ -136,7 +148,7 @@
           <h1>Comidas</h1>
           <p>Registra tus comidas de forma sencilla, sin contar calorías.</p>
         </div>
-        <div class="content-grid">
+        <div class="content-grid meal-content-grid">
           <article class="panel">
             <h2 id="meal-form-title">Nueva comida</h2>
             <form id="meal-form" class="form-stack">
@@ -208,6 +220,7 @@
         </article>
         <article class="panel settings-panel">
           <h2>Sincronización</h2>
+          <p id="sync-last-confirmed" class="last-confirmed">Aún no se ha confirmado una sincronización en este dispositivo.</p>
           <div id="sync-status" class="backend-status" role="status" aria-live="polite">Se comprobará al iniciar sesión.</div>
           <p class="field-hint">Los cambios se guardan primero en el dispositivo. Los pendientes se envían al volver a iniciar sesión con conexión.</p>
         </article>
@@ -220,6 +233,40 @@
       </section>
     </main>
     <footer>Balance · Registro personal</footer>
+  </div>
+  <button type="button" id="fab-add" class="fab-add" aria-label="Añadir registro" aria-haspopup="dialog" hidden>
+    <span aria-hidden="true">+</span>
+  </button>
+  <div class="composer-overlay" id="composer-overlay" hidden>
+    <div class="composer-backdrop" id="composer-backdrop" aria-hidden="true"></div>
+    <section class="composer-sheet" id="composer-sheet" role="dialog" aria-modal="true" aria-labelledby="composer-heading" tabindex="-1">
+      <div class="composer-handle" aria-hidden="true"></div>
+      <div class="composer-topbar">
+        <h2 id="composer-heading">Nuevo registro</h2>
+        <button type="button" id="composer-close" class="composer-close" aria-label="Cerrar">×</button>
+      </div>
+      <div class="composer-content">
+        <div id="composer-menu" class="composer-menu">
+          <button type="button" class="composer-choice" id="composer-select-weight">
+            <span class="composer-choice-icon" aria-hidden="true"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 9a4 4 0 0 1 8 0"/><path d="M12 9l2-2"/></svg></span>
+            <span><strong>Registrar peso</strong><small>Añadir un pesaje al historial</small></span>
+            <span aria-hidden="true" class="composer-choice-chevron">›</span>
+          </button>
+          <button type="button" class="composer-choice" id="composer-select-meal">
+            <span class="composer-choice-icon" aria-hidden="true"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v7a3 3 0 0 0 6 0V3M7 3v18M17 3c-2 3-3 6-3 10h5V3M17 13v8"/></svg></span>
+            <span><strong>Registrar comida</strong><small>Guardar una comida de hoy u otro día</small></span>
+            <span aria-hidden="true" class="composer-choice-chevron">›</span>
+          </button>
+        </div>
+        <div id="composer-weight-slot" hidden></div>
+        <div id="composer-meal-slot" hidden>
+          <div class="meal-suggestions" id="meal-suggestions" hidden>
+            <h3>Recientes y frecuentes</h3>
+            <div id="meal-suggestions-list" class="meal-suggestions-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <script type="module" src="./private-app.js"></script>

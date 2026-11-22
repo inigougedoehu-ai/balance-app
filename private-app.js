@@ -7,8 +7,61 @@ import {createForms} from "./lib/forms.js";
 const $=id=>document.getElementById(id);
 const SUPPORTED_VERSIONS=["0.5.0-private-sync","0.6.0-health-profile"];
 const PROFILE_VERSION="0.6.0-health-profile";
-let vault=null,session=null,synchronizer=null,forms=null,loginBusy=false,profileReady=false;
+let vault=null,session=null,synchronizer=null,forms=null,composer=null,loginBusy=false,profileReady=false;
 let lastMainView="peso";
+function createComposer(){
+  const overlay=$("composer-overlay");
+  const menu=$("composer-menu");
+  const weightSlot=$("composer-weight-slot"),mealSlot=$("composer-meal-slot");
+  // Se reutilizan los mismos formularios: no se clonan ni se crean IDs repetidos.
+  weightSlot.append($("weight-form").closest(".panel"));
+  mealSlot.append($("meal-form").closest(".panel"));
+  let lastFocus=null;
+  function hide(){
+    if(overlay.hidden)return;
+    overlay.hidden=true;
+    document.body.classList.remove("composer-open");
+    weightSlot.hidden=true;mealSlot.hidden=true;menu.hidden=false;
+    if(lastFocus && lastFocus.isConnected && !lastFocus.hidden)lastFocus.focus();
+  }
+  function show(kind=null){
+    if(overlay.hidden)lastFocus=document.activeElement;
+    overlay.hidden=false;
+    document.body.classList.add("composer-open");
+    const choose=kind===null;
+    menu.hidden=!choose;
+    weightSlot.hidden=kind!=="weight";
+    mealSlot.hidden=kind!=="meal";
+    $("composer-heading").textContent=choose?"Nuevo registro":
+      kind==="weight"?$("weight-form-title").textContent:$("meal-form-title").textContent;
+    $("composer-sheet").focus({preventScroll:true});
+  }
+  $("fab-add").addEventListener("click",()=>{if(vault)show()});
+  $("composer-close").addEventListener("click",hide);
+  $("composer-backdrop").addEventListener("click",hide);
+  $("composer-select-weight").addEventListener("click",()=>forms?.open("weight"));
+  $("composer-select-meal").addEventListener("click",()=>forms?.open("meal"));
+  document.addEventListener("keydown",event=>{
+    if(event.key==="Escape"&&!overlay.hidden){
+      event.preventDefault();
+      hide();
+    }
+  });
+  return {show,hide,isOpen:()=>!overlay.hidden};
+}
+function displayLastSync(){
+  const el=$("sync-last-confirmed");
+  if(!vault)return;
+  const value=vault.syncedAt;
+  if(!value){el.textContent="Todavía no hay sincronización confirmada en este dispositivo.";return}
+  const date=new Date(value);
+  el.textContent=Number.isNaN(date.getTime())?
+    "Sincronización pendiente de comprobar":
+    "Última sincronización confirmada: "+date.toLocaleString("es-ES",{
+      day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"
+    });
+}
+
 function closeUserMenu(){
   const panel=$("user-menu-panel"),button=$("user-menu-trigger");
   if(!panel||!button)return;
@@ -24,10 +77,15 @@ function toggleUserMenu(){
 function navigate(view){
   if(view==="peso"||view==="comidas")lastMainView=view;
   closeUserMenu();
+  if(composer?.isOpen())composer.hide();
+  if(vault)$("fab-add").hidden=view==="ajustes";
   route(view);
 }
 
-function refreshStatus(message,kind){status("sync-status",message,kind)}
+function refreshStatus(message,kind){
+  status("sync-status",message,kind);
+  displayLastSync();
+}
 function afterSave(){
   if(synchronizer)synchronizer.sync();
   else refreshStatus("Datos guardados cifrados. Inicia sesión con internet para sincronizar.","working");
@@ -79,6 +137,7 @@ async function login(event){
       :"Para sincronizar estos datos, actualiza Code.gs a la versión 0.6.0 y publica una nueva implementación.";
     forms.reset();
     forms.repaint();
+    displayLastSync();
     navigate("peso");
     synchronizer=authenticated
       ?createSynchronizer(vault,session,forms.repaint,(msg,kind)=>refreshStatus(msg,kind))
@@ -104,12 +163,14 @@ async function signOut(){
     return;
   }
   if(vault)await vault.flush().catch(()=>{});
+  composer?.hide();
   const oldToken=session;
   vault=null;session=null;synchronizer=null;profileReady=false;
   $("login-screen").hidden=false;
   document.querySelector(".main-nav").hidden=true;
   $("main-content").hidden=true;
   $("user-actions").hidden=true;
+  $("fab-add").hidden=true;
   $("login-password").value="";
   status("login-status","Introduce tu contraseña para abrir tus datos.","");
   if(oldToken)request("logout",{token:oldToken}).catch(()=>{});
@@ -121,7 +182,8 @@ function syncNow(){
 async function start(){
   try{
     if(!window.indexedDB||!crypto.subtle)throw Error("Este navegador no ofrece cifrado ni almacenamiento local.");
-    forms=createForms(()=>vault,afterSave,()=>profileReady);
+    composer=createComposer();
+    forms=createForms(()=>vault,afterSave,()=>profileReady,composer);
     $("login-form").addEventListener("submit",login);
     $("logout").addEventListener("click",signOut);
     $("sync-now").addEventListener("click",()=>{

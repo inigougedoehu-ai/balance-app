@@ -40,6 +40,18 @@ La web conserva el acceso y la sincronización de peso y comidas con el backend 
 
 La aplicación guarda esos datos cifrados en IndexedDB y sincronizados en `Settings`, accesibles únicamente para la sesión de su cuenta. Los datos de nacimiento **sí son legibles para el propietario del Google Sheets**.
 
+## Registro rápido y seguimiento visual
+
+La navegación principal tiene únicamente **Peso** y **Comidas**. El botón flotante **+**, situado abajo a la derecha, permite elegir entre **Registrar peso** y **Registrar comida**. Ambos formularios comparten una hoja inferior que funciona también en el iPhone. Editar un registro abre el mismo formulario con sus datos.
+
+- La gráfica utiliza **la distancia temporal real entre las fechas**, permite elegir entre 30 días, 90 días, un año o todo el historial, y conserva la línea horizontal de objetivo. Cada punto puede tocarse para conocer la fecha y el peso exacto.
+- El historial de comidas se agrupa por días; además de los filtros existentes, cada comida tiene una acción **Repetir**. El formulario muestra sugerencias privadas basadas en comidas recientes o repetidas, sin crear una base adicional de favoritos.
+- Al guardar un peso en una fecha que ya tiene otro, se ofrece actualizar el existente para evitar duplicados accidentales.
+- Tras eliminar un registro aparece un botón **Deshacer** durante unos segundos. Si el borrado ya se sincronizó, deshacer vuelve a enviar el registro con el mismo identificador.
+- Ajustes muestra la **última sincronización confirmada** en el dispositivo; las operaciones de registro siguen guardándose localmente antes de enviarse.
+
+No se necesitan cambios nuevos en Apps Script para estas funciones. Para guardar altura y fecha de nacimiento, sigue siendo necesario tener publicada la versión `0.6.0-health-profile` del backend.
+
 ## Instalación en iPhone
 
 En Safari, abrir la dirección principal de Balance y seleccionar **Compartir → Añadir a pantalla de inicio**. El manifiesto usa `start_url: "./"`, por lo que el icono abre el inicio de sesión sin añadir un nombre de archivo al enlace.
