@@ -12,7 +12,7 @@
  * pegar todo este archivo en Code.gs y ejecutar setupDatabase una vez.
  */
 
-const BALANCE_VERSION = "0.7.0-diary-extras";
+const BALANCE_VERSION = "0.8.0-safe-sync";
 
 const BALANCE_TABLES = Object.freeze({
   Users: [
@@ -555,6 +555,10 @@ function assertOp_(op) {
       !/^[0-9a-f-]{36}$/i.test(String(op.recordId || ""))) {
     throw new Error("Operación no válida");
   }
+  if (Object.prototype.hasOwnProperty.call(op,"baseUpdatedAt") &&
+      op.baseUpdatedAt !== null &&
+      (typeof op.baseUpdatedAt !== "string" || op.baseUpdatedAt.length > 80))
+    throw new Error("Versión previa del registro inválida");
   if (op.action === "delete") return;
   const record = op.record;
   if (!record || record.id !== op.recordId ||
@@ -723,6 +727,20 @@ function applyExtra_(book,userId,op,now) {
   else sheet.appendRow(values);
 }
 
+// Versión del registro existente, leída dentro del bloqueo del lote.
+// Un registro eliminado también conserva su última versión para evitar
+// que una edición antigua lo restaure sin consentimiento.
+function currentRecordVersion_(book,userId,kind,recordId) {
+  var extra = ["measure","day_note","favorite"].includes(kind);
+  var sheet=extra?ensureExtrasSheet_(book):book.getSheetByName(kind==="weight"?"Weights":"Meals");
+  var last=sheet.getLastRow();
+  if(last<2)return null;
+  var ids=sheet.getRange(2,1,last-1,2).getValues();
+  var idx=ids.findIndex(function(row){return String(row[0])===recordId&&String(row[1])===userId});
+  if(idx<0)return null;
+  return String(sheet.getRange(idx+2,extra?7:kind==="weight"?6:8).getValue()||"")||null;
+}
+
 function balanceApplyOperations(token, ops) {
   if (!Array.isArray(ops) || ops.length === 0 || ops.length > MAX_BATCH_) {
     throw new Error("Lote de sincronización no válido");
@@ -740,9 +758,25 @@ function balanceApplyOperations(token, ops) {
     historyRows.forEach(function (r) {
       if (String(r[1]) === userId) already[String(r[0])] = true;
     });
-    const confirmed = [];
+    const confirmed = [],conflicts=[],revisions={},touched={},blockedKeys={};
     ops.forEach(function (op) {
-      if (!already[op.id]) {
+      const key=op.kind+":"+String(op.recordId||"");
+      const isRecord=["weight","meal","measure","day_note","favorite"].includes(op.kind);
+      if(!already[op.id]) {
+        if(blockedKeys[key]){
+          conflicts.push({operationId:op.id,recordId:op.recordId,kind:op.kind,
+            serverUpdatedAt:currentRecordVersion_(book,userId,op.kind,op.recordId)});
+          return;
+        }
+        if(isRecord&&Object.prototype.hasOwnProperty.call(op,"baseUpdatedAt")&&!touched[key]){
+          const remote=currentRecordVersion_(book,userId,op.kind,op.recordId);
+          if(remote!==op.baseUpdatedAt){
+            blockedKeys[key]=true;
+            conflicts.push({operationId:op.id,recordId:op.recordId,kind:op.kind,
+              serverUpdatedAt:remote});
+            return;
+          }
+        }
         const now = new Date().toISOString();
         if (op.kind === "goal") applyGoal_(book, userId, op, now);
         else if (op.kind === "profile") applyProfile_(book, userId, op, now);
@@ -752,11 +786,12 @@ function balanceApplyOperations(token, ops) {
         // El marcador se guarda después de aplicar el cambio.
         history.appendRow([op.id, userId, op.kind, op.recordId || "", op.action, now]);
         already[op.id] = true;
+        if(isRecord){touched[key]=true;revisions[key]=now}
       }
       confirmed.push(op.id);
     });
     SpreadsheetApp.flush();
-    return { ok: true, confirmed: confirmed };
+    return { ok: true, confirmed: confirmed,conflicts:conflicts,revisions:revisions };
   } finally {
     lock.releaseLock();
   }

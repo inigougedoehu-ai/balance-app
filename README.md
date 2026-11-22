@@ -52,6 +52,36 @@ La navegación principal tiene únicamente **Peso** y **Comidas**. El botón flo
 
 No se necesitan cambios nuevos en Apps Script para estas funciones. Para guardar altura y fecha de nacimiento, sigue siendo necesario tener publicada la versión `0.6.0-health-profile` del backend.
 
+## Mejoras de uso y seguridad (0.8)
+
+- **Calendario interactivo**: consultar, editar o borrar registros directamente en cada fecha. Los botones «+ Peso», «+ Comida» y «+ Medidas» abren los formularios con esa fecha seleccionada.
+- **Gráficas de medidas**: elegir cintura, cadera, pecho o brazo y consultar la evolución por fecha real y la diferencia entre el primer y el último registro.
+- **Buscador de comidas**: filtra por nombre o notas, compatible con el filtro de tipo.
+- **Comparación mensual**: peso medio del mes actual frente al anterior si hay datos en ambos periodos. No es una predicción.
+- **Última pestaña**: cada cuenta recuerda Peso o Comidas en el navegador actual.
+- **Ajustes → Indicadores visibles**: se pueden ocultar IMC, clasificación, cambio, media y progreso. Preferencias individuales guardadas localmente.
+- **Ajustes → Recordatorios**: avisos de peso opcionales al abrir Balance si ya ha llegado la hora y no hay peso registrado hoy. Elige frecuencia diaria o semanal, día y hora. No son notificaciones push; **no avisan con la PWA cerrada**. No se solicitan permisos de notificaciones.
+- **Ajustes → Exportar datos → Importar JSON**: permite recuperar registros desde una copia `balance-v1` de la misma cuenta. Comprueba formato, fechas, tipos, valores, IDs duplicados y límites; muestra una vista previa. Solo incorpora IDs nuevos, no reemplaza registros ni restaura ajustes. Requiere confirmación. Los datos importados pasan a la copia cifrada local y a la cola de sincronización.
+- **Ajustes → Sincronización**: muestra número de operaciones pendientes y conflictos por registro. Con backend 0.8, los cambios se comparan con la versión que vio el dispositivo; ante un conflicto no se sobreescribe automáticamente el registro. Se puede elegir explícitamente la versión de Google Sheets o la local.
+
+### Actualización necesaria de Apps Script
+
+Para activar la comprobación de conflictos y sincronizar todos los tipos de registros, instala **`0.8.0-safe-sync`**:
+
+1. En la hoja privada de Balance, abre **Extensiones → Apps Script**.
+2. Sustituye solo `Code.gs` por el contenido de `backend/Code.gs` del repositorio. Conserva el archivo `Bridge.html`, las propiedades del proyecto y las contraseñas.
+3. Guarda y selecciona **Implementar → Gestionar implementaciones → Editar → Nueva versión → Implementar**.
+4. Confirma que `/exec?action=health` devuelve `"version":"0.8.0-safe-sync"`, cierra sesión y entra en Balance desde los dos dispositivos para usar la protección nueva.
+
+La implementación mantiene las tablas existentes y usa `Extras` para medidas, notas y favoritos. Los registros antiguos se mantienen. La protección de conflictos no es retroactiva para versiones antiguas de la aplicación ni puede impedir que un cliente desactualizado escriba sin enviar un control de versión. Es necesario actualizar también la PWA en los dispositivos donde se utiliza Balance.
+
+### Límites de recordatorios e importación
+
+Los recordatorios funcionan solo cuando se abre o vuelve a estar visible la aplicación. No hay ejecución en segundo plano ni avisos si está completamente cerrada.
+
+La importación está limitada a un archivo de 6 MB y 3000 registros por operación. Se valida antes de modificar los datos. No restaura contraseñas, identificadores de sesión, preferencias visuales ni objetivos.
+
+
 ## Diario con calendario, tendencia y medidas (0.7)
 
 La navegación mantiene las dos secciones principales. El botón **+** ofrece tres acciones: Registrar peso, Registrar comida y Registrar medidas. El historial de medidas sigue dentro de Peso; ya no incluye un botón redundante para añadirlas.

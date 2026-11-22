@@ -83,27 +83,28 @@
           </div>
         </div>
         <div class="health-overview" aria-label="Indicadores de peso">
-          <div class="health-item">
+          <div class="health-item" id="health-bmi">
             <span>IMC</span>
             <strong id="metric-bmi">—</strong>
             <small id="metric-height">Configura la altura en Ajustes</small>
           </div>
-          <div class="health-item">
+          <div class="health-item" id="health-classification">
             <span>Clasificación</span>
             <strong class="health-label" id="metric-bmi-status">—</strong>
             <small id="metric-bmi-note">Orientativa para adultos</small>
           </div>
-          <div class="health-item">
+          <div class="health-item" id="health-change">
             <span>Último cambio</span>
             <strong id="metric-change">—</strong>
             <small>Respecto al pesaje anterior</small>
           </div>
-          <div class="health-item">
+          <div class="health-item" id="health-avg7">
             <span>Media de 7 días</span>
             <strong id="metric-avg7">—</strong>
             <small>Solo días con pesajes</small>
           </div>
         </div>
+        <div id="period-compare" class="period-compare" aria-live="polite"></div>
         <article id="progress-card" class="panel progress-panel" hidden>
           <div class="section-title"><h2>Tu progreso</h2><span id="progress-status"></span></div>
           <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
@@ -145,6 +146,14 @@
         <article class="panel measures-panel">
           <div class="section-title"><h2>Medidas corporales</h2></div>
           <p class="field-hint">Registra cintura, cadera, pecho o brazo, solo cuando quieras.</p>
+          <div class="measure-chart-controls">
+            <label for="measure-chart-kind">Evolución de <select id="measure-chart-kind">
+              <option value="waistCm">Cintura</option><option value="hipCm">Cadera</option>
+              <option value="chestCm">Pecho</option><option value="armCm">Brazo</option>
+            </select></label>
+            <span id="measure-chart-change"></span>
+          </div>
+          <div id="measure-chart" class="measure-chart" role="img" aria-label="Evolución de las medidas corporales"></div>
           <div id="measure-list" class="record-list"></div>
         </article>
         <article class="panel measure-editor-holder">
@@ -213,6 +222,9 @@
                 </select>
               </label>
             </div>
+            <label for="meal-search" class="meal-search-label"><span class="visually-hidden">Buscar comidas</span>
+              <input type="search" id="meal-search" placeholder="Buscar comidas por nombre o notas…" autocomplete="off" maxlength="120">
+            </label>
             <div id="meal-list" class="record-list"></div>
           </article>
         </div>
@@ -235,6 +247,11 @@
   <span class="settings-link-copy"><strong>Apariencia</strong><small>Colores de la aplicación</small></span>
   <span class="settings-link-arrow" aria-hidden="true">›</span>
 </button>
+          <button type="button" class="settings-link" data-settings-target="visualizacion" aria-label="Indicadores visibles">
+  <span class="settings-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2" fill="currentColor"/><circle cx="15" cy="12" r="2" fill="currentColor"/></svg></span>
+  <span class="settings-link-copy"><strong>Indicadores visibles</strong><small>Personaliza el resumen de Peso</small></span>
+  <span class="settings-link-arrow" aria-hidden="true">›</span>
+</button>
           <button type="button" class="settings-link" data-settings-target="personales" aria-label="Datos personales">
   <span class="settings-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5.2 20a6.8 6.8 0 0 1 13.6 0"/></svg></span>
   <span class="settings-link-copy"><strong>Datos personales</strong><small>Altura y fecha de nacimiento</small></span>
@@ -250,6 +267,11 @@
       <section class="settings-category" aria-labelledby="settings-data-title">
         <h2 id="settings-data-title" class="settings-category-title">Datos y privacidad</h2>
         <div class="settings-links">
+          <button type="button" class="settings-link" data-settings-target="recordatorios" aria-label="Recordatorios">
+  <span class="settings-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></span>
+  <span class="settings-link-copy"><strong>Recordatorios</strong><small>Avisos opcionales dentro de Balance</small></span>
+  <span class="settings-link-arrow" aria-hidden="true">›</span>
+</button>
           <button type="button" class="settings-link" data-settings-target="sincronizacion" aria-label="Sincronización">
   <span class="settings-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v4h-4"/><path d="M4 17v-4h4"/><path d="M5.8 9a7.5 7.5 0 0 1 12.6-2L20 11"/><path d="M4 13l1.6 4a7.5 7.5 0 0 0 12.6-2"/></svg></span>
   <span class="settings-link-copy"><strong>Sincronización</strong><small>Estado de conexión y guardado</small></span>
@@ -277,6 +299,17 @@
           <p id="theme-choice-status" class="theme-choice-status" role="status" aria-live="polite">Verde seleccionado</p>
           <p class="field-hint">Se guarda para esta cuenta en este dispositivo. No modifica tus registros.</p>
         </article>
+    <article data-settings-panel="visualizacion" hidden class="panel settings-panel">
+      <h2>En la pantalla Peso</h2>
+      <p class="field-hint">Marca los indicadores que quieres consultar. Cada cuenta conserva su configuración en este navegador.</p>
+      <div class="settings-toggles">
+        <label><input type="checkbox" id="show-bmi" checked> Índice de masa corporal (IMC)</label>
+        <label><input type="checkbox" id="show-classification" checked> Clasificación del IMC</label>
+        <label><input type="checkbox" id="show-change" checked> Último cambio de peso</label>
+        <label><input type="checkbox" id="show-average" checked> Media de 7 días</label>
+        <label><input type="checkbox" id="show-progress" checked> Progreso hacia el objetivo</label>
+      </div>
+    </article>
     <article data-settings-panel="personales" hidden class="panel settings-panel">
           <form id="profile-form" class="form-stack">
             <label for="profile-height">Altura (cm)</label>
@@ -296,15 +329,39 @@
             <button type="submit" class="primary-button">Guardar objetivo</button>
           </form>
         </article>
+    <article data-settings-panel="recordatorios" hidden class="panel settings-panel">
+      <h2>Recordatorio de peso</h2>
+      <p class="field-hint">Aparecerá un aviso al abrir Balance después de la hora elegida. No son notificaciones programadas con la aplicación cerrada.</p>
+      <form id="reminder-form" class="form-stack">
+        <label for="reminder-frequency">Frecuencia</label>
+        <select id="reminder-frequency"><option value="off">Desactivado</option><option value="daily">Cada día</option><option value="weekly">Una vez a la semana</option></select>
+        <label for="reminder-weekday">Día de la semana</label>
+        <select id="reminder-weekday"><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option><option value="0">Domingo</option></select>
+        <label for="reminder-time">Hora</label>
+        <input id="reminder-time" type="time" value="09:00">
+        <button type="submit" class="primary-button">Guardar recordatorio</button>
+        <p id="reminder-status" class="field-hint"></p>
+      </form>
+    </article>
     <article data-settings-panel="sincronizacion" hidden class="panel settings-panel">
           <p id="sync-last-confirmed" class="last-confirmed">Aún no se ha confirmado una sincronización en este dispositivo.</p>
           <div id="sync-status" class="backend-status" role="status" aria-live="polite">Se comprobará al iniciar sesión.</div>
+          <p id="sync-pending-count" class="field-hint">0 cambios pendientes.</p>
+          <div id="sync-conflicts" class="sync-conflicts"></div>
           <p class="field-hint">Los cambios se guardan primero en el dispositivo. Los pendientes se envían al volver a iniciar sesión con conexión.</p>
         </article>
     <article data-settings-panel="exportacion" hidden class="panel settings-panel">
           <p class="muted">Puedes guardar una copia de tus registros. El archivo exportado no está cifrado.</p>
           <div class="export-actions"><button id="export-data" class="secondary-button" type="button">Exportar JSON</button><button id="export-csv" class="secondary-button" type="button">Exportar CSV</button></div>
           <p class="field-hint">Contiene los registros de esta cuenta. Guárdalo en un lugar privado.</p>
+          <div class="import-section">
+            <h2>Importar copia JSON</h2>
+            <p class="field-hint">Se comprueba la cuenta y cada registro. Solo se incorporan identificadores que no existan ya; los actuales no se sobrescriben.</p>
+            <label for="import-file" class="field-hint">Selecciona una copia de Balance</label>
+            <input id="import-file" type="file" accept=".json,application/json">
+            <div id="import-preview" class="import-preview" role="status" aria-live="polite"></div>
+            <button type="button" class="secondary-button" id="import-confirm" disabled>Importar registros comprobados</button>
+          </div>
         </article>
   </div>
 </section>
@@ -368,6 +425,11 @@
       <section class="calendar-day-details" aria-labelledby="calendar-day-title">
         <h3 id="calendar-day-title">Registros del día</h3>
         <div id="calendar-day-records"></div>
+        <div class="calendar-quick-actions" aria-label="Añadir registro en esta fecha">
+          <button type="button" id="calendar-add-weight">+ Peso</button>
+          <button type="button" id="calendar-add-meal">+ Comida</button>
+          <button type="button" id="calendar-add-measure">+ Medidas</button>
+        </div>
         <form id="daily-note-form" class="form-stack">
           <label for="daily-note-text">Nota del día <span class="optional">(opcional)</span></label>
           <textarea id="daily-note-text" rows="3" maxlength="1000" placeholder="¿Qué quieres recordar de este día?"></textarea>

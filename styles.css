@@ -909,3 +909,80 @@ body.calendar-open{overflow:hidden}
   .page-head-line h1{width:100%}
   .calendar-launch{min-height:37px}
 }
+
+
+/* Balance: búsqueda, medidas, acciones en calendario y ajustes avanzados. */
+.meal-search-label{display:block;margin:12px 0 9px}
+.meal-search-label input{
+  width:100%;max-width:none;min-height:44px;
+  padding:10px 13px;border:1px solid #dce5dc;border-radius:10px;
+  background:#fff;font-size:13px;color:#34473d
+}
+.meal-search-label input:focus{border-color:var(--balance-accent)}
+.measure-chart-controls{
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:8px;margin:16px 0 8px
+}
+.measure-chart-controls label{font-size:12px;font-weight:670;color:#5f7365}
+.measure-chart-controls select{
+  margin-left:4px;border:1px solid #dce5dc;border-radius:9px;
+  background:white;min-height:37px;padding:6px 28px 6px 9px;
+  font-size:12px;color:var(--balance-accent)
+}
+#measure-chart-change{font-size:12px;color:var(--balance-accent);font-weight:650}
+.measure-chart{min-height:215px}
+.measure-chart svg{display:block;width:100%;height:auto;max-height:265px}
+.measure-chart .empty-state{padding:36px 5px;text-align:center}
+.period-compare{
+  margin:5px 0 16px;padding:12px 15px;
+  background:var(--balance-accent-soft);border:1px solid var(--balance-accent-border);
+  border-radius:12px;color:var(--balance-accent);font-size:12px;line-height:1.5
+}
+.calendar-day-record{
+  display:flex;align-items:center;gap:12px;justify-content:space-between
+}
+.calendar-day-text{min-width:0;flex:1;overflow-wrap:anywhere}
+.calendar-record-actions{display:flex;flex:none;gap:8px}
+.calendar-record-actions button,.calendar-quick-actions button{
+  border:1px solid var(--balance-accent-border);border-radius:8px;
+  background:white;color:var(--balance-accent);
+  padding:7px 10px;font-size:11px;font-weight:670
+}
+.calendar-record-actions button:hover,.calendar-quick-actions button:hover{
+  background:var(--balance-accent-soft)
+}
+.calendar-quick-actions{
+  display:flex;flex-wrap:wrap;gap:7px;
+  margin:13px 0 16px
+}
+.calendar-quick-actions button{font-size:12px;padding:9px 12px}
+.settings-toggles{display:flex;flex-direction:column;gap:13px;margin-top:20px}
+.settings-toggles label{
+  display:flex;align-items:center;gap:10px;
+  color:#405448;font-size:13px;line-height:1.45;cursor:pointer
+}
+.settings-toggles input{width:18px;height:18px;accent-color:var(--balance-accent)}
+.import-section{margin-top:24px;padding-top:21px;border-top:1px solid #e4eae3}
+.import-section h2{font-size:16px}
+.import-section input[type=file]{max-width:100%;font-size:12px;margin:9px 0}
+.import-preview{
+  padding:9px 0;font-size:12px;line-height:1.55;
+  color:#536e5c;overflow-wrap:anywhere
+}
+#import-confirm:disabled{opacity:.45;cursor:default}
+.sync-conflicts{display:flex;flex-direction:column;gap:13px;margin:14px 0}
+.sync-conflict{
+  border:1px solid #e6bca7;border-radius:12px;
+  background:#fff8f2;padding:15px
+}
+.sync-conflict strong{font-size:13px;color:#704b34}
+.sync-conflict p{font-size:12px;color:#8a644e;line-height:1.5}
+.sync-conflict-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:10px}
+.sync-conflict-actions button{font-size:11px!important;padding:8px 10px!important}
+@media(max-width:710px){
+  .calendar-day-record{flex-wrap:wrap}
+  .calendar-record-actions{width:100%;justify-content:flex-end}
+  .measure-chart{min-height:180px}
+  .measure-chart svg{max-height:220px}
+  .period-compare{font-size:11px}
+}
