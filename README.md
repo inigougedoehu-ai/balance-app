@@ -16,6 +16,21 @@ La interfaz inicial permite:
 
 Los registros se guardan exclusivamente en **IndexedDB, en el navegador actual**. Todavía no existen autenticación, separación de usuarios, cifrado local ni sincronización con Sheets. Los datos locales se pueden perder si se borran los datos del navegador. **No introduzcas datos reales de salud en esta versión.**
 
+## Comprobación de conexión con Google Apps Script
+
+En la pestaña **Ajustes → Conexión con Google** pulsa **Probar conexión con Google**.
+La prueba utiliza la URL pública del Apps Script y efectúa:
+
+1. Una consulta JSONP `health` sin datos personales.
+2. Un POST `probe` con un identificador aleatorio.
+3. Una consulta `probe_status` que confirma que Apps Script recibió el identificador.
+
+**Esto no es todavía sincronización con Google Sheets.** Ninguna fila de peso ni comida se envía, lee o guarda en la hoja. Las solicitudes de prueba solo acceden a propiedades del script y a una caché temporal.
+
+La URL pública de Apps Script no es una credencial. Nunca almacenar claves de usuario en el repositorio. Si cambias la URL de implementación, habrá que actualizar `BACKEND_URL` en `app.js`.
+
+Si se actualiza el archivo `backend/Code.gs`, publicar una **nueva versión de la implementación** en Apps Script para que los cambios lleguen a la URL `/exec`.
+
 ## Publicar la prueba en GitHub Pages
 
 En el repositorio, abre **Settings → Pages**:
