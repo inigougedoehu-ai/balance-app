@@ -4,13 +4,15 @@ import {createSynchronizer} from "./lib/sync.js";
 import {route,status,toast} from "./lib/ui.js";
 import {createForms} from "./lib/forms.js";
 import {applyTheme,loadTheme,initThemeSelector} from "./lib/theme.js";
+import {createDiary} from "./lib/diary.js";
 
 const $=id=>document.getElementById(id);
-const SUPPORTED_VERSIONS=["0.5.0-private-sync","0.6.0-health-profile"];
+const EXTRA_VERSION="0.7.0-diary-extras";
+const SUPPORTED_VERSIONS=["0.5.0-private-sync","0.6.0-health-profile",EXTRA_VERSION];
 const PROFILE_VERSION="0.6.0-health-profile";
-let vault=null,session=null,synchronizer=null,forms=null,composer=null,loginBusy=false,profileReady=false;
+let vault=null,session=null,synchronizer=null,forms=null,composer=null,features=null,loginBusy=false,profileReady=false,extrasReady=false;
 let lastMainView="peso";
-const SETTINGS_SECTIONS={"apariencia":{"title":"Apariencia","kicker":"PERSONALIZACIÓN","description":"Elige cómo quieres que se vea Balance."},"personales":{"title":"Datos personales","kicker":"PERFIL","description":"Gestiona los datos utilizados para calcular tu edad y el IMC."},"objetivo":{"title":"Objetivo de peso","kicker":"SEGUIMIENTO","description":"Establece el peso objetivo que aparece en tu resumen y en la gráfica."},"sincronizacion":{"title":"Sincronización","kicker":"DATOS Y PRIVACIDAD","description":"Comprueba cuándo se sincronizaron tus registros por última vez."},"exportacion":{"title":"Exportar datos","kicker":"DATOS Y PRIVACIDAD","description":"Descarga una copia de los registros de tu cuenta en formato JSON."}};
+const SETTINGS_SECTIONS={"apariencia":{"title":"Apariencia","kicker":"PERSONALIZACIÓN","description":"Elige cómo quieres que se vea Balance."},"personales":{"title":"Datos personales","kicker":"PERFIL","description":"Gestiona los datos utilizados para calcular tu edad y el IMC."},"objetivo":{"title":"Objetivo de peso","kicker":"SEGUIMIENTO","description":"Establece el peso objetivo que aparece en tu resumen y en la gráfica."},"sincronizacion":{"title":"Sincronización","kicker":"DATOS Y PRIVACIDAD","description":"Comprueba cuándo se sincronizaron tus registros por última vez."},"exportacion":{"title":"Exportar datos","kicker":"DATOS Y PRIVACIDAD","description":"Descarga una copia de tus registros en JSON o CSV."}};
 let settingsSection=null;
 function resetSettings(){
   settingsSection=null;
@@ -45,16 +47,17 @@ function closeSettingsSection(){
 function createComposer(){
   const overlay=$("composer-overlay");
   const menu=$("composer-menu");
-  const weightSlot=$("composer-weight-slot"),mealSlot=$("composer-meal-slot");
+  const weightSlot=$("composer-weight-slot"),mealSlot=$("composer-meal-slot"),measureSlot=$("composer-measure-slot");
   // Se reutilizan los mismos formularios: no se clonan ni se crean IDs repetidos.
   weightSlot.append($("weight-form").closest(".panel"));
   mealSlot.append($("meal-form").closest(".panel"));
+  measureSlot.append($("measure-form").closest(".panel"));
   let lastFocus=null;
   function hide(){
     if(overlay.hidden)return;
     overlay.hidden=true;
     document.body.classList.remove("composer-open");
-    weightSlot.hidden=true;mealSlot.hidden=true;menu.hidden=false;
+    weightSlot.hidden=true;mealSlot.hidden=true;measureSlot.hidden=true;menu.hidden=false;
     if(lastFocus && lastFocus.isConnected && !lastFocus.hidden)lastFocus.focus();
   }
   function show(kind=null){
@@ -65,8 +68,10 @@ function createComposer(){
     menu.hidden=!choose;
     weightSlot.hidden=kind!=="weight";
     mealSlot.hidden=kind!=="meal";
+    measureSlot.hidden=kind!=="measure";
     $("composer-heading").textContent=choose?"Nuevo registro":
-      kind==="weight"?$("weight-form-title").textContent:$("meal-form-title").textContent;
+      kind==="weight"?$("weight-form-title").textContent:
+      kind==="meal"?$("meal-form-title").textContent:$("measure-form-title").textContent;
     $("composer-sheet").focus({preventScroll:true});
   }
   $("fab-add").addEventListener("click",()=>{if(vault)show()});
@@ -112,6 +117,7 @@ function navigate(view){
   resetSettings();
   closeUserMenu();
   if(composer?.isOpen())composer.hide();
+  features?.closeCalendar();
   if(vault)$("fab-add").hidden=view==="ajustes";
   route(view);
 }
@@ -141,7 +147,8 @@ async function login(event){
       if(!health?.ok||!SUPPORTED_VERSIONS.includes(health.version)){
         throw Error("Debes actualizar Code.gs y Bridge.html y publicar una nueva versión de Apps Script.");
       }
-      profileReady=health.version===PROFILE_VERSION;
+      profileReady=[PROFILE_VERSION,EXTRA_VERSION].includes(health.version);
+      extrasReady=health.version===EXTRA_VERSION;
       result=await request("login",{userId,password});
       if(!result?.ok)throw Error(result?.error||"Credenciales incorrectas");
       authenticated=true;
@@ -150,11 +157,18 @@ async function login(event){
       if(result?.ok===false)throw error;
       if(error.message.includes("Debes actualizar"))throw error;
       profileReady=!navigator.onLine;
+      extrasReady=false;
       // Solo entrada local; nunca confundimos el modo offline con una sesión remota.
       status("login-status","Sin conexión con Google. Intentando desbloqueo local…","working");
     }
     const opened=await unlock(userId,password,authenticated);
     vault=opened;
+    if(authenticated && extrasReady){
+      vault.extrasEnabled=true;
+      await vault.save();
+    }else if(!authenticated){
+      extrasReady=vault.extrasEnabled===true;
+    }
     loadTheme(userId);
     session=authenticated?token:null;
     $("login-password").value="";
@@ -199,9 +213,10 @@ async function signOut(){
   }
   if(vault)await vault.flush().catch(()=>{});
   composer?.hide();
+  features?.closeCalendar();
   resetSettings();
   const oldToken=session;
-  vault=null;session=null;synchronizer=null;profileReady=false;
+  vault=null;session=null;synchronizer=null;profileReady=false;extrasReady=false;
   applyTheme("verde");
   $("login-screen").hidden=false;
   document.querySelector(".main-nav").hidden=true;
@@ -221,6 +236,13 @@ async function start(){
     if(!window.indexedDB||!crypto.subtle)throw Error("Este navegador no ofrece cifrado ni almacenamiento local.");
     composer=createComposer();
     forms=createForms(()=>vault,afterSave,()=>profileReady,composer);
+    features=createDiary(()=>vault,{
+      change:(...args)=>forms.change(...args),
+      deleteRecord:record=>forms.deleteRecord(record),
+      composer,
+      canExtras:()=>extrasReady
+    });
+    forms.setFeatures(features);
     initThemeSelector(()=>vault?.userId,(_color,stored)=>{
       forms?.repaint();
       if(!stored)toast("Color aplicado, pero el navegador no pudo recordar la preferencia.");

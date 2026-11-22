@@ -67,8 +67,8 @@
       <section class="view" data-view="peso">
         <div class="page-head">
           <span class="eyebrow">SEGUIMIENTO</span>
-          <h1>Peso</h1>
-          <p>Consulta la evolución y añade nuevos registros.</p>
+          <div class="page-head-line"><h1>Peso</h1><button type="button" class="calendar-launch" id="open-calendar-weight"><span aria-hidden="true">▦</span> Calendario</button></div>
+          <p>Consulta la evolución, tus medidas y los registros por día.</p>
         </div>
         <div class="weight-summary" aria-label="Resumen de peso">
           <div class="weight-summary-item weight-summary-primary">
@@ -104,6 +104,11 @@
             <small>Solo días con pesajes</small>
           </div>
         </div>
+        <article id="progress-card" class="panel progress-panel" hidden>
+          <div class="section-title"><h2>Tu progreso</h2><span id="progress-status"></span></div>
+          <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+          <p id="progress-copy" class="field-hint"></p>
+        </article>
         <div class="content-grid weight-content-grid">
           <article class="panel">
             <h2 id="weight-form-title">Nuevo pesaje</h2>
@@ -133,9 +138,32 @@
               </label>
             </div>
             <div id="weight-chart" class="chart-container"><p class="empty-state">Aquí aparecerá tu gráfica cuando registres pesajes.</p></div>
+            <div class="chart-legend"><span class="legend-actual">Pesajes</span><span class="legend-trend">Tendencia (7 días)</span><span class="legend-target">Objetivo</span></div>
             <div id="chart-point-detail" class="chart-point-detail" role="status" aria-live="polite"></div>
           </article>
         </div>
+        <article class="panel measures-panel">
+          <div class="section-title"><h2>Medidas corporales</h2><button type="button" class="secondary-button measure-launch" id="open-measure-form">Registrar medidas</button></div>
+          <p class="field-hint">Registra cintura, cadera, pecho o brazo, solo cuando quieras.</p>
+          <div id="measure-list" class="record-list"></div>
+        </article>
+        <article class="panel measure-editor-holder">
+          <h2 id="measure-form-title">Registrar medidas</h2>
+          <form id="measure-form" class="form-stack">
+            <div class="date-field-header"><label for="measure-date">Fecha</label><button type="button" id="measure-today" class="date-today">Hoy</button></div>
+            <input type="date" id="measure-date" required>
+            <div class="measure-fields">
+              <label>Cintura (cm)<input id="measure-waist" type="number" inputmode="decimal" min="10" max="250" step="0.1" placeholder="Opcional"></label>
+              <label>Cadera (cm)<input id="measure-hip" type="number" inputmode="decimal" min="10" max="250" step="0.1" placeholder="Opcional"></label>
+              <label>Pecho (cm)<input id="measure-chest" type="number" inputmode="decimal" min="10" max="250" step="0.1" placeholder="Opcional"></label>
+              <label>Brazo (cm)<input id="measure-arm" type="number" inputmode="decimal" min="10" max="250" step="0.1" placeholder="Opcional"></label>
+            </div>
+            <label for="measure-notes">Observaciones <span class="optional">(opcional)</span></label>
+            <textarea id="measure-notes" maxlength="400" rows="2" placeholder="Algo que quieras recordar"></textarea>
+            <p id="extras-support-measure" class="field-hint" hidden></p>
+            <button type="submit" id="measure-submit" class="primary-button">Guardar medidas</button>
+          </form>
+        </article>
         <article class="panel record-panel">
           <div class="section-title"><h2>Historial</h2><span id="weight-count">0 registros</span></div>
           <div id="weight-list" class="record-list"></div>
@@ -145,8 +173,8 @@
       <section class="view" data-view="comidas" hidden>
         <div class="page-head">
           <span class="eyebrow">DIARIO</span>
-          <h1>Comidas</h1>
-          <p>Registra tus comidas de forma sencilla, sin contar calorías.</p>
+          <div class="page-head-line"><h1>Comidas</h1><button type="button" class="calendar-launch" id="open-calendar-meal"><span aria-hidden="true">▦</span> Calendario</button></div>
+          <p>Consulta tu diario y organiza las comidas por fecha.</p>
         </div>
         <div class="content-grid meal-content-grid">
           <article class="panel">
@@ -275,7 +303,7 @@
         </article>
     <article data-settings-panel="exportacion" hidden class="panel settings-panel">
           <p class="muted">Puedes guardar una copia de tus registros. El archivo exportado no está cifrado.</p>
-          <button id="export-data" class="secondary-button" type="button">Exportar mis registros (JSON)</button>
+          <div class="export-actions"><button id="export-data" class="secondary-button" type="button">Exportar JSON</button><button id="export-csv" class="secondary-button" type="button">Exportar CSV</button></div>
           <p class="field-hint">Contiene los registros de esta cuenta. Guárdalo en un lugar privado.</p>
         </article>
   </div>
@@ -314,7 +342,29 @@
             <div id="meal-suggestions-list" class="meal-suggestions-list"></div>
           </div>
         </div>
+        <div id="composer-measure-slot" hidden></div>
       </div>
+    </section>
+  </div>
+  <div class="calendar-overlay" id="calendar-overlay" hidden>
+    <div class="calendar-backdrop" id="calendar-backdrop"></div>
+    <section class="calendar-dialog" id="calendar-dialog" role="dialog" aria-modal="true" aria-labelledby="calendar-title" tabindex="-1">
+      <div class="calendar-top"><div><span class="eyebrow">TU DIARIO</span><h2 id="calendar-title">Calendario</h2></div><button type="button" class="composer-close" id="calendar-close" aria-label="Cerrar">×</button></div>
+      <div class="calendar-nav"><button type="button" id="calendar-prev" aria-label="Mes anterior">‹</button><strong id="calendar-month"></strong><button type="button" id="calendar-next" aria-label="Mes siguiente">›</button></div>
+      <div id="calendar-grid" class="calendar-grid" role="group" aria-label="Días del mes"></div>
+      <div class="calendar-monthly">
+        <h3>Resumen del mes</h3><div id="calendar-monthly-stats" class="calendar-stats"></div>
+      </div>
+      <section class="calendar-day-details" aria-labelledby="calendar-day-title">
+        <h3 id="calendar-day-title">Registros del día</h3>
+        <div id="calendar-day-records"></div>
+        <form id="daily-note-form" class="form-stack">
+          <label for="daily-note-text">Nota del día <span class="optional">(opcional)</span></label>
+          <textarea id="daily-note-text" rows="3" maxlength="1000" placeholder="¿Qué quieres recordar de este día?"></textarea>
+          <p id="extras-support-note" class="field-hint" hidden></p>
+          <button type="submit" class="secondary-button" id="daily-note-save">Guardar nota del día</button>
+        </form>
+      </section>
     </section>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>

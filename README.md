@@ -52,6 +52,33 @@ La navegación principal tiene únicamente **Peso** y **Comidas**. El botón flo
 
 No se necesitan cambios nuevos en Apps Script para estas funciones. Para guardar altura y fecha de nacimiento, sigue siendo necesario tener publicada la versión `0.6.0-health-profile` del backend.
 
+## Diario con calendario, tendencia y medidas (0.7)
+
+La navegación mantiene las dos secciones principales y el botón + para peso y comidas.
+
+- **Calendario** en Peso y Comidas: navegación mensual; los días con registros indican si hay pesajes, comidas, medidas o notas. Al seleccionar un día, se muestran juntos sus datos y se puede añadir o editar una nota de hasta 1000 caracteres.
+- **Resumen mensual** dentro del calendario: número de pesajes, comidas, días con comidas, registros de medidas y notas; variación de peso calculada entre el primer y el último pesaje del mes, cuando existen al menos dos.
+- **Tendencia de 7 días** en la gráfica: media de los pesajes registrados durante los siete días anteriores a cada pesaje, como máximo uno por día. Se dibuja cuando hay al menos dos días de datos dentro de la ventana; no se inventan valores en días sin medición.
+- **Medidas corporales** en Peso: cintura, cadera, pecho y brazo en centímetros. Son campos opcionales; se exige al menos uno. Se pueden editar y borrar.
+- **Comidas favoritas**: estrella en el historial de comidas. Las favoritas se muestran por delante de las sugerencias recientes en el formulario de Comidas.
+- **Progreso hacia el objetivo**, calculado a partir del primer pesaje y el último, si hay datos suficientes y un peso objetivo.
+- **CSV** junto al exportador JSON existente. El CSV contiene todos los tipos de registro en columnas etiquetadas. Se antepone un apóstrofo a textos que podrían interpretarse como fórmulas al abrirse en una hoja de cálculo.
+
+### Sincronización de las funciones nuevas
+
+Las vistas de calendario, tendencia, progreso, resumen mensual y exportación CSV funcionan con los datos que ya existen.
+
+Para **guardar y sincronizar medidas corporales, notas diarias y comidas favoritas** hay que actualizar la implementación de Apps Script a **`0.7.0-diary-extras`**:
+
+1. Abre la hoja privada de Google Sheets → **Extensiones → Apps Script**.
+2. Sustituye el contenido de `Code.gs` por `backend/Code.gs` del repositorio, sin tocar las propiedades del proyecto, las cuentas ni las contraseñas.
+3. Guarda el archivo y selecciona **Implementar → Gestionar implementaciones → Editar → Nueva versión → Implementar**.
+4. Comprueba que `/exec?action=health` comunica la versión `0.7.0-diary-extras`. Cierra sesión y vuelve a entrar en Balance.
+
+El servidor crea automáticamente una nueva pestaña **Extras**, con el identificador y el usuario de cada registro. No modifica ni borra `Weights`, `Meals`, `Settings` ni las tablas de autenticación. Se siguen validando todas las operaciones por el usuario de su sesión y con UUIDs para evitar duplicados. Los datos adicionales se guardan también en el almacén local cifrado. El backend antiguo sigue permitiendo iniciar sesión y trabajar con peso y comidas; en él se desactiva el guardado de las funciones nuevas para no bloquear la cola de sincronización.
+
+Esta actualización no añade fotografías, registro de agua, avisos push ni integración nativa con Apple Salud.
+
 ## Organización de Ajustes
 
 El menú de la cuenta abre una pantalla principal de **Ajustes** con dos grupos: **Personalización y seguimiento** (Apariencia, Datos personales, Objetivo de peso) y **Datos y privacidad** (Sincronización y Exportar datos). Cada opción abre su propio apartado y tiene un botón para regresar a la lista de Ajustes. El botón «Volver» de la lista regresa a la pestaña anterior.
