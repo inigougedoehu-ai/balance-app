@@ -902,3 +902,10 @@ body.calendar-open{overflow:hidden}
   .calendar-day,.calendar-empty{min-height:41px}
   .calendar-dialog{padding-left:13px;padding-right:13px}
 }
+
+/* Evitar que el botón Calendario desborde en pantallas estrechas. */
+@media(max-width:420px){
+  .page-head-line{flex-wrap:wrap;align-items:flex-start;row-gap:7px}
+  .page-head-line h1{width:100%}
+  .calendar-launch{min-height:37px}
+}

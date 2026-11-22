@@ -672,7 +672,14 @@ function applyProfile_(book, userId, op, now) {
 function ensureExtrasSheet_(book) {
   var sheet = book.getSheetByName("Extras");
   var headers = BALANCE_TABLES.Extras;
-  if (!sheet) sheet = book.insertSheet("Extras");
+  if (!sheet) {
+    try { sheet = book.insertSheet("Extras"); }
+    catch (error) {
+      // Si otra sesión creó la pestaña simultáneamente, reutilizarla.
+      sheet = book.getSheetByName("Extras");
+      if (!sheet) throw error;
+    }
+  }
   if (sheet.getLastRow() === 0) {
     sheet.getRange(1,1,1,headers.length).setValues([headers]);
     sheet.setFrozenRows(1);
