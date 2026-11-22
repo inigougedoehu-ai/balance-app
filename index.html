@@ -156,6 +156,22 @@
           <p class="field-hint">La comprobación utiliza un identificador aleatorio de prueba y no escribe filas en Google Sheets.</p>
         </article>
         <article class="panel settings-panel">
+          <h2>Comprobar las cuentas privadas</h2>
+          <p class="muted">En esta fase comprobamos que el servidor reconoce vuestras contraseñas, sin crear todavía sesiones ni dar acceso a registros. No guardamos aquí la contraseña.</p>
+          <form id="account-test-form" class="form-stack">
+            <label for="account-name">Cuenta</label>
+            <select id="account-name" name="account" required>
+              <option value="inigo">Iñigo</option>
+              <option value="clara">Clara</option>
+            </select>
+            <label for="account-password">Contraseña de esa cuenta</label>
+            <input id="account-password" name="password" type="password" autocomplete="off" minlength="14" maxlength="200" required placeholder="Contraseña configurada en Apps Script">
+            <button type="submit" class="primary-button" id="account-test-submit">Comprobar contraseña</button>
+          </form>
+          <div id="account-test-status" class="backend-status" role="status" aria-live="polite">Primero configura las dos contraseñas en Apps Script.</div>
+          <p class="field-hint">Esta comprobación no inicia sesión. No introduzcas aún registros reales de salud.</p>
+        </article>
+        <article class="panel settings-panel">
           <h2>Almacenamiento</h2>
           <p class="muted">En esta versión todo se almacena en tu navegador con IndexedDB. No se comparte con Google Sheets ni con ningún servidor.</p>
           <button id="export-data" class="secondary-button" type="button">Exportar copia de prueba (JSON)</button>
