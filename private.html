@@ -82,11 +82,36 @@
             <small id="metric-goal-info">Puedes definirlo en Ajustes</small>
           </div>
         </div>
+        <div class="health-overview" aria-label="Indicadores de peso">
+          <div class="health-item">
+            <span>IMC</span>
+            <strong id="metric-bmi">—</strong>
+            <small id="metric-height">Configura la altura en Ajustes</small>
+          </div>
+          <div class="health-item">
+            <span>Clasificación</span>
+            <strong class="health-label" id="metric-bmi-status">—</strong>
+            <small id="metric-bmi-note">Orientativa para adultos</small>
+          </div>
+          <div class="health-item">
+            <span>Último cambio</span>
+            <strong id="metric-change">—</strong>
+            <small>Respecto al pesaje anterior</small>
+          </div>
+          <div class="health-item">
+            <span>Media de 7 días</span>
+            <strong id="metric-avg7">—</strong>
+            <small>Solo días con pesajes</small>
+          </div>
+        </div>
         <div class="content-grid">
           <article class="panel">
             <h2 id="weight-form-title">Nuevo pesaje</h2>
             <form id="weight-form" class="form-stack">
-              <label for="weight-date">Fecha</label>
+              <div class="date-field-header">
+                <label for="weight-date">Fecha</label>
+                <button type="button" class="date-today" id="weight-today">Hoy</button>
+              </div>
               <input id="weight-date" name="date" type="date" required>
               <label for="weight-value">Peso (kg)</label>
               <input id="weight-value" name="value" type="number" step="0.1" min="15" max="500" placeholder="Ej.: 75,2" inputmode="decimal" required>
@@ -115,7 +140,10 @@
           <article class="panel">
             <h2 id="meal-form-title">Nueva comida</h2>
             <form id="meal-form" class="form-stack">
-              <label for="meal-date">Fecha</label>
+              <div class="date-field-header">
+                <label for="meal-date">Fecha</label>
+                <button type="button" class="date-today" id="meal-today">Hoy</button>
+              </div>
               <input id="meal-date" name="date" type="date" required>
               <label for="meal-type">Tipo de comida</label>
               <select id="meal-type" name="type" required>
@@ -130,7 +158,21 @@
             </form>
           </article>
           <article class="panel record-panel">
-            <div class="section-title"><h2>Historial</h2><span id="meal-count">0 registros</span></div>
+            <div class="section-title history-heading">
+              <div><h2>Historial</h2><span id="meal-count">0 registros</span></div>
+              <label class="meal-filter-label" for="meal-filter">
+                <span class="visually-hidden">Filtrar comidas</span>
+                <select id="meal-filter">
+                  <option value="all">Todas</option>
+                  <option value="Desayuno">Desayuno</option>
+                  <option value="Media mañana">Media mañana</option>
+                  <option value="Comida">Comida</option>
+                  <option value="Merienda">Merienda</option>
+                  <option value="Cena">Cena</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </label>
+            </div>
             <div id="meal-list" class="record-list"></div>
           </article>
         </div>
@@ -143,6 +185,18 @@
           <h1>Ajustes</h1>
           <p>Objetivo, sincronización y exportación de registros.</p>
         </div>
+        <article class="panel settings-panel">
+          <h2>Datos personales</h2>
+          <form id="profile-form" class="form-stack">
+            <label for="profile-height">Altura (cm)</label>
+            <input id="profile-height" type="number" min="90" max="250" step="0.1" inputmode="decimal" placeholder="Ej.: 170">
+            <label for="profile-birth-date">Fecha de nacimiento</label>
+            <input id="profile-birth-date" type="date" min="1900-01-01">
+            <p class="profile-age" id="profile-age">Edad: sin configurar</p>
+            <button id="profile-submit" type="submit" class="primary-button">Guardar datos personales</button>
+            <p id="profile-support-status" class="field-hint">Los datos se sincronizan con tu cuenta.</p>
+          </form>
+        </article>
         <article class="panel settings-panel">
           <h2>Objetivo de peso</h2>
           <form id="goal-form" class="form-stack">
