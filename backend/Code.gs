@@ -3,15 +3,16 @@
  *
  * IMPORTANTE:
  * Este archivo NO implementa el acceso a datos personales.
- * Crea las pestañas y permite verificar las contraseñas de dos cuentas.
- * NO crea sesiones ni permite leer/escribir pesos o comidas. La contraseña
- * solo viaja por HTTPS en el cuerpo POST, nunca en una URL o repositorio.
+ * Backend de dos cuentas, con sesiones y registros separados por usuario.
+ * Los datos personales y las contraseñas solo viajan a través de HTMLService
+ * + google.script.run; jamás por endpoints JSONP o URLs públicas.
+ * Copiar junto al archivo Bridge.html actualizado.
  *
  * Instalación: abrir "Balance - Base de datos" > Extensiones > Apps Script,
  * pegar todo este archivo en Code.gs y ejecutar setupDatabase una vez.
  */
 
-const BALANCE_VERSION = "0.4.0-bridge-test";
+const BALANCE_VERSION = "0.5.0-private-sync";
 
 const BALANCE_TABLES = Object.freeze({
   Users: [
@@ -257,17 +258,7 @@ function doGet(event) {
         received: CacheService.getScriptCache().get("probe:" + id) === "ok"
       };
     }
-  } else if (params.action === "account_test_status") {
-    const id = String(params.request_id || "");
-    if (!/^[a-zA-Z0-9_-]{24,100}$/.test(id)) {
-      result = { ok: false, error: "Identificador no válido" };
-    } else {
-      // Un resultado de validación, nunca datos personales ni sesiones.
-      result = {
-        ok: true,
-        status: CacheService.getScriptCache().get("balance:account:" + id) || "pending"
-      };
-    }
+
   } else {
     result = { ok: false, error: "Acción no disponible" };
   }
@@ -292,8 +283,6 @@ function doPost(event) {
         CacheService.getScriptCache().put("probe:" + id, "ok", 120);
         result = { ok: true };
       }
-    } else if (body.action === "account_test") {
-      result = testAccount_(body);
     }
   } catch (error) {
     // No añadir contraseñas ni el cuerpo POST al registro de errores.
@@ -316,4 +305,293 @@ function balanceReply_(result, callback) {
 
   return ContentService.createTextOutput(json)
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+
+/* ------------------------ Sesiones y datos privados ------------------------ */
+
+/**
+ * Nunca se llama desde doGet/doPost. Únicamente desde Bridge.html,
+ * a través de google.script.run, después de comprobar el origen del padre.
+ * El propio Apps Script sigue siendo el responsable de comprobar el token.
+ */
+const SESSION_LENGTH_MS_ = 7 * 24 * 60 * 60 * 1000;
+const MAX_BATCH_ = 30;
+
+function balanceSignIn(userId, password) {
+  userId = String(userId || "").toLowerCase();
+  if (!["inigo", "clara"].includes(userId) ||
+      typeof password !== "string" ||
+      password.length < 14 || password.length > 200) {
+    return { ok: false, error: "Credenciales incorrectas" };
+  }
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const cache = CacheService.getScriptCache();
+    const key = "balance:attempts:" + userId;
+    const attempts = Number(cache.get(key) || "0");
+    if (attempts >= 6) {
+      return { ok: false, error: "Demasiados intentos. Espera unos minutos." };
+    }
+    if (!verifyAccount_(userId, password)) {
+      cache.put(key, String(attempts + 1), 600);
+      return { ok: false, error: "Credenciales incorrectas" };
+    }
+    cache.remove(key);
+    const token = Utilities.getUuid() + Utilities.getUuid() + Utilities.getUuid();
+    const now = Date.now();
+    const expiresAt = new Date(now + SESSION_LENGTH_MS_).toISOString();
+    const hash = sessionHash_(token);
+    const book = privateBook_();
+    book.getSheetByName("Sessions").appendRow([
+      hash, userId, new Date(now).toISOString(), expiresAt, ""
+    ]);
+    return { ok: true, token: token, userId: userId, expiresAt: expiresAt };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function privateBook_() {
+  const id = PropertiesService.getScriptProperties()
+    .getProperty("BALANCE_SPREADSHEET_ID");
+  if (!id) throw new Error("Base de datos sin configurar");
+  return SpreadsheetApp.openById(id);
+}
+
+function sha256Hex_(data) {
+  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, data);
+  return digest.map(function (byte) {
+    return ("0" + (byte & 0xff).toString(16)).slice(-2);
+  }).join("");
+}
+
+function sessionHash_(token) {
+  const pepper = PropertiesService.getScriptProperties()
+    .getProperty("BALANCE_PASSWORD_PEPPER");
+  if (!pepper) throw new Error("Servidor sin configurar");
+  return sha256Hex_(pepper + ":" + token);
+}
+
+/** Devuelve siempre el usuario derivado del token, nunca de una petición. */
+function sessionUser_(token) {
+  if (typeof token !== "string" || !/^[a-f0-9-]{100,130}$/.test(token)) {
+    throw new Error("Sesión no válida. Vuelve a iniciar sesión.");
+  }
+  const hash = sessionHash_(token);
+  const sheet = privateBook_().getSheetByName("Sessions");
+  if (sheet.getLastRow() < 2) {
+    throw new Error("Sesión no válida. Vuelve a iniciar sesión.");
+  }
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 5).getValues();
+  const session = rows.find(function (row) { return String(row[0]) === hash; });
+  if (!session || String(session[4] || "") !== "" ||
+      !Number.isFinite(Date.parse(String(session[3]))) ||
+      Date.parse(String(session[3])) <= Date.now()) {
+    throw new Error("Sesión caducada o cerrada. Vuelve a iniciar sesión.");
+  }
+  return String(session[1]);
+}
+
+function balanceSignOut(token) {
+  if (typeof token !== "string") return { ok: true };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const hash = sessionHash_(token);
+    const sheet = privateBook_().getSheetByName("Sessions");
+    if (sheet.getLastRow() > 1) {
+      const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues();
+      const i = rows.findIndex(function (r) { return String(r[0]) === hash; });
+      if (i >= 0) sheet.getRange(i + 2, 5).setValue(new Date().toISOString());
+    }
+    return { ok: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function dateText_(value) {
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
+  }
+  return String(value || "").slice(0, 10);
+}
+
+function weightFromRow_(row) {
+  return {
+    id: String(row[0]), kind: "weight", date: dateText_(row[2]),
+    value: Number(row[3]), createdAt: String(row[4]),
+    updatedAt: String(row[5])
+  };
+}
+
+function mealFromRow_(row) {
+  return {
+    id: String(row[0]), kind: "meal", date: dateText_(row[2]),
+    type: String(row[3]), description: String(row[4]),
+    notes: String(row[5] || ""), createdAt: String(row[6]),
+    updatedAt: String(row[7])
+  };
+}
+
+function readState_(book, userId) {
+  const weightsSheet = book.getSheetByName("Weights");
+  const mealsSheet = book.getSheetByName("Meals");
+  const settingsSheet = book.getSheetByName("Settings");
+  const weights = weightsSheet.getLastRow() > 1
+    ? weightsSheet.getRange(2, 1, weightsSheet.getLastRow() - 1, 7).getValues()
+      .filter(function (r) { return String(r[1]) === userId && !r[6]; })
+      .map(weightFromRow_)
+    : [];
+  const meals = mealsSheet.getLastRow() > 1
+    ? mealsSheet.getRange(2, 1, mealsSheet.getLastRow() - 1, 9).getValues()
+      .filter(function (r) { return String(r[1]) === userId && !r[8]; })
+      .map(mealFromRow_)
+    : [];
+  let goal = null;
+  if (settingsSheet.getLastRow() > 1) {
+    const rows = settingsSheet.getRange(2, 1, settingsSheet.getLastRow() - 1, 3).getValues();
+    const row = rows.find(function (r) { return String(r[0]) === userId; });
+    if (row && row[1] !== "" && row[1] !== null) goal = Number(row[1]);
+  }
+  return { ok: true, weights: weights, meals: meals, goal: goal, serverAt: new Date().toISOString() };
+}
+
+function balanceGetState(token) {
+  const userId = sessionUser_(token);
+  return readState_(privateBook_(), userId);
+}
+
+function assertOp_(op) {
+  if (!op || typeof op !== "object" ||
+      !/^[0-9a-f-]{36}$/i.test(String(op.id || ""))) {
+    throw new Error("Identificador de operación inválido");
+  }
+  if (op.kind === "goal") {
+    if (op.action !== "set") throw new Error("Operación de objetivo inválida");
+    if (op.value !== null && (!Number.isFinite(op.value) || op.value < 15 || op.value > 500)) {
+      throw new Error("Objetivo no válido");
+    }
+    return;
+  }
+  if (!["weight", "meal"].includes(op.kind) ||
+      !["upsert", "delete"].includes(op.action) ||
+      !/^[0-9a-f-]{36}$/i.test(String(op.recordId || ""))) {
+    throw new Error("Operación no válida");
+  }
+  if (op.action === "delete") return;
+  const record = op.record;
+  if (!record || record.id !== op.recordId ||
+      record.kind !== op.kind ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(String(record.date || ""))) {
+    throw new Error("Registro no válido");
+  }
+  const parsed = new Date(String(record.date) + "T12:00:00Z");
+  if (!Number.isFinite(parsed.getTime()) ||
+      parsed.toISOString().slice(0, 10) !== record.date) {
+    throw new Error("Fecha no válida");
+  }
+  if (op.kind === "weight") {
+    if (!Number.isFinite(record.value) || record.value < 15 || record.value > 500) {
+      throw new Error("Peso no válido");
+    }
+  } else {
+    if (!["Desayuno", "Media mañana", "Comida", "Merienda", "Cena", "Otro"].includes(record.type) ||
+        typeof record.description !== "string" ||
+        !record.description.trim() || record.description.length > 400 ||
+        typeof record.notes !== "string" || record.notes.length > 600) {
+      throw new Error("Comida no válida");
+    }
+  }
+}
+
+function safeCell_(value) {
+  const text = String(value === undefined || value === null ? "" : value);
+  return /^[=+\-@\t\r]/.test(text) ? "'" + text : text;
+}
+
+function applyEntry_(book, userId, op, now) {
+  const weight = op.kind === "weight";
+  const sheet = book.getSheetByName(weight ? "Weights" : "Meals");
+  const width = weight ? 7 : 9;
+  const storedRows = sheet.getLastRow() > 1
+    ? sheet.getRange(2, 1, sheet.getLastRow() - 1, 2).getValues()
+    : [];
+  const found = storedRows.findIndex(function (r) {
+    return String(r[0]) === op.recordId && String(r[1]) === userId;
+  });
+  const rowIndex = found < 0 ? -1 : found + 2;
+
+  if (op.action === "delete") {
+    if (rowIndex > 0) {
+      sheet.getRange(rowIndex, width).setValue(now);
+      sheet.getRange(rowIndex, width - 1).setValue(now);
+    }
+    return;
+  }
+
+  const record = op.record;
+  // No se admiten cambios de propiedad: solo el usuario del token.
+  const createdAt = rowIndex > 0
+    ? sheet.getRange(rowIndex, weight ? 5 : 7).getValue() || now
+    : now;
+  const values = weight
+    ? [op.recordId, userId, record.date, record.value, createdAt, now, ""]
+    : [op.recordId, userId, record.date, record.type,
+      safeCell_(record.description), safeCell_(record.notes),
+      createdAt, now, ""];
+
+  if (rowIndex > 0) {
+    sheet.getRange(rowIndex, 1, 1, width).setValues([values]);
+  } else {
+    sheet.appendRow(values);
+  }
+}
+
+function applyGoal_(book, userId, op, now) {
+  const sheet = book.getSheetByName("Settings");
+  const rows = sheet.getLastRow() > 1
+    ? sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues() : [];
+  const i = rows.findIndex(function (r) { return String(r[0]) === userId; });
+  const values = [userId, op.value === null ? "" : op.value, now];
+  if (i >= 0) sheet.getRange(i + 2, 1, 1, 3).setValues([values]);
+  else sheet.appendRow(values);
+}
+
+function balanceApplyOperations(token, ops) {
+  if (!Array.isArray(ops) || ops.length === 0 || ops.length > MAX_BATCH_) {
+    throw new Error("Lote de sincronización no válido");
+  }
+  ops.forEach(assertOp_);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const userId = sessionUser_(token);
+    const book = privateBook_();
+    const history = book.getSheetByName("Operations");
+    const historyRows = history.getLastRow() > 1
+      ? history.getRange(2, 1, history.getLastRow() - 1, 2).getValues() : [];
+    const already = {};
+    historyRows.forEach(function (r) {
+      if (String(r[1]) === userId) already[String(r[0])] = true;
+    });
+    const confirmed = [];
+    ops.forEach(function (op) {
+      if (!already[op.id]) {
+        const now = new Date().toISOString();
+        if (op.kind === "goal") applyGoal_(book, userId, op, now);
+        else applyEntry_(book, userId, op, now);
+        // El marcador se guarda después de aplicar el cambio.
+        history.appendRow([op.id, userId, op.kind, op.recordId || "", op.action, now]);
+        already[op.id] = true;
+      }
+      confirmed.push(op.id);
+    });
+    SpreadsheetApp.flush();
+    return { ok: true, confirmed: confirmed };
+  } finally {
+    lock.releaseLock();
+  }
 }
