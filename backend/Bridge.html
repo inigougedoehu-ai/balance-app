@@ -1,46 +1,54 @@
 <!doctype html>
 <html lang="es">
-<head>
-  <meta charset="utf-8">
-  <title>Balance — conexión privada</title>
-</head>
+<head><meta charset="utf-8"><title>Balance · canal privado</title></head>
 <body>
-  <script>
-  "use strict";
-  (function () {
-    // Únicamente aceptamos órdenes de la web oficial de Balance.
-    const BALANCE_ORIGIN = "https://inigougedoehu-ai.github.io";
-    const nonce = "<?= bridgeNonce ?>";
-    const version = "balance-bridge-v1";
+<script>
+"use strict";
+(function () {
+  const TRUSTED_ORIGIN = "https://inigougedoehu-ai.github.io";
+  const nonce = "<?= bridgeNonce ?>";
+  const protocol = "balance-private-v1";
+  function send(type, id, data) {
+    window.top.postMessage({
+      app: "balance", protocol: protocol, nonce: nonce,
+      type: type, id: id || null, data: data || null
+    }, TRUSTED_ORIGIN);
+  }
 
-    function announce(type, extra) {
-      window.top.postMessage(
-        Object.assign({ app: "balance", bridge: version, type: type, nonce: nonce }, extra || {}),
-        BALANCE_ORIGIN
-      );
+  window.addEventListener("message", function (event) {
+    if (event.origin !== TRUSTED_ORIGIN || event.source !== window.top) return;
+    const message = event.data;
+    if (!message || message.app !== "balance" ||
+        message.protocol !== protocol || message.nonce !== nonce ||
+        message.type !== "request" ||
+        typeof message.id !== "string" ||
+        !/^[0-9a-f-]{36}$/i.test(message.id)) return;
+    const p = message.payload || {};
+    const onSuccess = function (result) { send("result", message.id, result); };
+    const onFailure = function (error) {
+      // No se devuelven mensajes de error potencialmente sensibles.
+      send("error", message.id, { message: error && error.message || "Error del servidor" });
+    };
+    const runner = google.script.run
+      .withSuccessHandler(onSuccess)
+      .withFailureHandler(onFailure);
+    if (message.action === "health") runner.bridgeHealthCheck();
+    else if (message.action === "login" &&
+             typeof p.userId === "string" && typeof p.password === "string") {
+      runner.balanceSignIn(p.userId, p.password);
+    } else if (message.action === "pull" && typeof p.token === "string") {
+      runner.balanceGetState(p.token);
+    } else if (message.action === "push" && typeof p.token === "string" &&
+               Array.isArray(p.operations) && p.operations.length <= 30) {
+      runner.balanceApplyOperations(p.token, p.operations);
+    } else if (message.action === "logout" && typeof p.token === "string") {
+      runner.balanceSignOut(p.token);
+    } else {
+      send("error", message.id, { message: "Operación no admitida" });
     }
-
-    window.addEventListener("message", function (event) {
-      if (event.origin !== BALANCE_ORIGIN || event.source !== window.top) return;
-      const message = event.data;
-      if (!message || message.app !== "balance" ||
-          message.bridge !== version || message.nonce !== nonce) return;
-
-      // ÚNICA acción aceptada en esta fase: comprobar conexión.
-      if (message.type === "ping") {
-        google.script.run
-          .withSuccessHandler(function (result) {
-            announce("pong", { result: result });
-          })
-          .withFailureHandler(function () {
-            announce("error", { message: "El servidor no respondió al puente privado." });
-          })
-          .bridgeHealthCheck();
-      }
-    });
-
-    announce("ready");
-  })();
-  </script>
+  });
+  send("ready", null, null);
+})();
+</script>
 </body>
 </html>
