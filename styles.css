@@ -563,3 +563,130 @@ body.composer-open{overflow:hidden}
   .composer-sheet{padding-left:16px;padding-right:16px}
   .fab-add{right:15px}
 }
+
+
+/* Apariencia: nueve temas a partir de una única paleta por cuenta. */
+:root{
+  --balance-accent:#244D3E;
+  --balance-accent-hover:#173D30;
+  --balance-accent-soft:#E8F2EA;
+  --balance-accent-border:#BFD7C6;
+  --balance-deep:var(--balance-accent);
+  --forest:var(--balance-accent);
+  --balance-focus:var(--balance-accent);
+}
+.brand-mark,.weight-summary-primary,.fab-add,.primary-button,.toast{
+  background-color:var(--balance-accent);
+}
+.weight-summary-primary,.primary-button{border-color:var(--balance-accent)}
+.primary-button:hover,.fab-add:hover{
+  background-color:var(--balance-accent-hover);
+  border-color:var(--balance-accent-hover);
+}
+.nav-item.active{
+  color:var(--balance-accent);
+  border-bottom-color:var(--balance-accent);
+}
+.nav-item:hover,.back-button,.text-button,.date-today,.secondary-button{
+  color:var(--balance-accent);
+}
+.secondary-button{border-color:var(--balance-accent)}
+.secondary-button:hover,.user-trigger:hover,.user-trigger[aria-expanded="true"],
+.user-menu-item:hover,.user-menu-item:focus-visible,
+.record-actions button:hover,.composer-choice:hover,
+.meal-suggestion:hover{
+  background-color:var(--balance-accent-soft);
+}
+.user-trigger:hover,.user-trigger[aria-expanded="true"],
+.composer-choice:hover,.meal-suggestion:hover{
+  border-color:var(--balance-accent-border);
+}
+.user-avatar,.composer-choice-icon{
+  background:var(--balance-accent-soft);
+  color:var(--balance-accent);
+}
+.eyebrow,.health-item>strong,.chart-point-detail,.record-actions button:hover,
+.meal-suggestion strong,.date-today:hover,.composer-choice-icon{
+  color:var(--balance-accent);
+}
+.fab-add:focus-visible,.primary-button:focus-visible,
+.theme-choice:focus-visible{
+  outline-color:var(--balance-accent);
+}
+input:focus,textarea:focus,select:focus{
+  border-color:var(--balance-accent);
+  box-shadow:0 0 0 3px var(--balance-accent-soft);
+}
+.theme-options{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+  margin:3px 0 14px;
+  max-width:525px;
+}
+.appearance-settings .appearance-description{
+  color:var(--balance-muted);
+  font-size:13px;
+  line-height:1.55;
+  margin-bottom:17px;
+}
+.theme-choice{
+  min-width:0;
+  min-height:92px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  padding:11px 5px;
+  border:1px solid transparent;
+  border-radius:12px;
+  background:transparent;
+  color:var(--balance-text);
+  transition:background-color .15s,border-color .15s;
+}
+.theme-choice:hover{
+  background:var(--balance-accent-soft);
+}
+.theme-choice[aria-pressed="true"]{
+  background:var(--balance-accent-soft);
+  border-color:var(--balance-accent-border);
+}
+.theme-choice-swatch{
+  width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:var(--theme-swatch);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.035);
+}
+.theme-choice-check{
+  opacity:0;
+  color:white;
+  font-size:20px;
+  font-weight:750;
+  line-height:1;
+}
+.theme-choice[aria-pressed="true"] .theme-choice-check{opacity:1}
+.theme-choice-label{
+  font-size:12px;
+  line-height:1.2;
+  font-weight:590;
+  white-space:nowrap;
+}
+.theme-choice[aria-pressed="true"] .theme-choice-label{
+  color:var(--balance-accent);
+  font-weight:750;
+}
+.theme-choice-status{
+  margin:0 0 15px!important;
+  color:var(--balance-accent)!important;
+  font-size:12px!important;
+  font-weight:700;
+}
+@media(max-width:710px){
+  .theme-options{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+  .theme-choice{min-height:88px}
+  .theme-choice-swatch{width:37px;height:37px}
+}
