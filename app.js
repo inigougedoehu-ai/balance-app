@@ -352,7 +352,7 @@ async function testAccountPassword(event) {
     if (!health?.ok || health.app !== "Balance") {
       throw new Error("Apps Script no reconoce Balance. Revisa la implementación.");
     }
-    if (health.version !== "0.3.0-auth-check") {
+    if (!["0.3.0-auth-check", "0.4.0-bridge-test"].includes(health.version)) {
       throw new Error(
         "Apps Script está ejecutando la versión " +
         (health.version || "desconocida") +
