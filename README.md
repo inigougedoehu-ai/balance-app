@@ -16,6 +16,21 @@ La interfaz inicial permite:
 
 Los registros se guardan exclusivamente en **IndexedDB, en el navegador actual**. Todavía no existen autenticación, separación de usuarios, cifrado local ni sincronización con Sheets. Los datos locales se pueden perder si se borran los datos del navegador. **No introduzcas datos reales de salud en esta versión.**
 
+## Fase 4: prueba del canal privado con HTMLService
+
+Esta fase solo prueba una alternativa a JSONP para operaciones privadas, sin modificar pesos ni comidas.
+
+1. En Apps Script sustituir el contenido de `Code.gs` por `backend/Code.gs` actualizado.
+2. Pulsar **+ (Archivos) → HTML**, crear un archivo llamado **Bridge** (Apps Script lo muestra como `Bridge.html`) y pegar el contenido íntegro de `backend/Bridge.html`.
+3. Guardar y hacer **Implementar → Gestionar implementaciones → Editar → Nueva versión → Implementar**. Conservar la misma URL `/exec`.
+4. Abrir Balance → **Ajustes → Conexión privada con Google → Probar conexión privada**.
+
+La respuesta satisfactoria será `Puente privado conectado a Apps Script (0.4.0-bridge-test)`.
+
+El puente usa la página HTML de Apps Script con `google.script.run`, intercambiando mensajes con `postMessage`, comprobación de origen y nonce aleatorio. En esta fase solo ejecuta `bridgeHealthCheck`. No transporta contraseñas, sesiones ni registros.
+
+La incrustación de Apps Script depende del navegador. Si Safari bloquea esta vía, no usaremos un mecanismo inseguro para leer información personal; buscaremos otra configuración que no requiera servicios adicionales.
+
 ## Fase 3: configurar y comprobar dos contraseñas
 
 La infraestructura está preparada, pero **aún no existen sesiones de usuario** y los datos registrados siguen siendo locales y de demostración.
