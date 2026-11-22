@@ -5,8 +5,9 @@ import {route,status,toast} from "./lib/ui.js";
 import {createForms} from "./lib/forms.js";
 
 const $=id=>document.getElementById(id);
-const REQUIRED_VERSION="0.5.0-private-sync";
-let vault=null,session=null,synchronizer=null,forms=null,loginBusy=false;
+const SUPPORTED_VERSIONS=["0.5.0-private-sync","0.6.0-health-profile"];
+const PROFILE_VERSION="0.6.0-health-profile";
+let vault=null,session=null,synchronizer=null,forms=null,loginBusy=false,profileReady=false;
 let lastMainView="peso";
 function closeUserMenu(){
   const panel=$("user-menu-panel"),button=$("user-menu-trigger");
@@ -45,9 +46,10 @@ async function login(event){
     try{
       if(!navigator.onLine)throw Error("Sin conexión");
       const health=await request("health");
-      if(!health?.ok||health.version!==REQUIRED_VERSION){
+      if(!health?.ok||!SUPPORTED_VERSIONS.includes(health.version)){
         throw Error("Debes actualizar Code.gs y Bridge.html y publicar una nueva versión de Apps Script.");
       }
+      profileReady=health.version===PROFILE_VERSION;
       result=await request("login",{userId,password});
       if(!result?.ok)throw Error(result?.error||"Credenciales incorrectas");
       authenticated=true;
@@ -55,6 +57,7 @@ async function login(event){
     }catch(error){
       if(result?.ok===false)throw error;
       if(error.message.includes("Debes actualizar"))throw error;
+      profileReady=!navigator.onLine;
       // Solo entrada local; nunca confundimos el modo offline con una sesión remota.
       status("login-status","Sin conexión con Google. Intentando desbloqueo local…","working");
     }
@@ -70,6 +73,10 @@ async function login(event){
     $("account-avatar").textContent=userId==="inigo"?"I":"C";
     $("user-menu-trigger").setAttribute("aria-label","Menú de "+(userId==="inigo"?"Iñigo":"Clara"));
     closeUserMenu();
+    $("profile-submit").disabled=!profileReady;
+    $("profile-support-status").textContent=profileReady
+      ?"La altura y la fecha de nacimiento se guardan con esta cuenta."
+      :"Para sincronizar estos datos, actualiza Code.gs a la versión 0.6.0 y publica una nueva implementación.";
     forms.reset();
     forms.repaint();
     navigate("peso");
@@ -98,7 +105,7 @@ async function signOut(){
   }
   if(vault)await vault.flush().catch(()=>{});
   const oldToken=session;
-  vault=null;session=null;synchronizer=null;
+  vault=null;session=null;synchronizer=null;profileReady=false;
   $("login-screen").hidden=false;
   document.querySelector(".main-nav").hidden=true;
   $("main-content").hidden=true;
@@ -114,7 +121,7 @@ function syncNow(){
 async function start(){
   try{
     if(!window.indexedDB||!crypto.subtle)throw Error("Este navegador no ofrece cifrado ni almacenamiento local.");
-    forms=createForms(()=>vault,afterSave);
+    forms=createForms(()=>vault,afterSave,()=>profileReady);
     $("login-form").addEventListener("submit",login);
     $("logout").addEventListener("click",signOut);
     $("sync-now").addEventListener("click",()=>{
