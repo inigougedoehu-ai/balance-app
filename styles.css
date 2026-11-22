@@ -567,10 +567,10 @@ body.composer-open{overflow:hidden}
 
 /* Apariencia: nueve temas a partir de una única paleta por cuenta. */
 :root{
-  --balance-accent:#244D3E;
-  --balance-accent-hover:#173D30;
-  --balance-accent-soft:#E8F2EA;
-  --balance-accent-border:#BFD7C6;
+  --balance-accent:#087D4F;
+  --balance-accent-hover:#075F3D;
+  --balance-accent-soft:#E6F7EE;
+  --balance-accent-border:#B4E4CC;
   --balance-deep:var(--balance-accent);
   --forest:var(--balance-accent);
   --balance-focus:var(--balance-accent);
