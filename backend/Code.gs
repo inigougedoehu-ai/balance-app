@@ -391,7 +391,17 @@ function sessionUser_(token) {
       Date.parse(String(session[3])) <= Date.now()) {
     throw new Error("Sesión caducada o cerrada. Vuelve a iniciar sesión.");
   }
-  return String(session[1]);
+  const userId = String(session[1]);
+  const usersSheet = privateBook_().getSheetByName("Users");
+  const users = usersSheet.getLastRow() > 1
+    ? usersSheet.getRange(2, 1, usersSheet.getLastRow() - 1, 6).getValues()
+    : [];
+  if (!users.some(function (row) {
+    return String(row[0]) === userId && row[5] === true;
+  })) {
+    throw new Error("Cuenta desactivada. Contacta con el administrador.");
+  }
+  return userId;
 }
 
 function balanceSignOut(token) {
@@ -416,7 +426,7 @@ function dateText_(value) {
   if (value instanceof Date) {
     return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
   }
-  return String(value || "").slice(0, 10);
+  return String(value || "").replace(/^'/, "").slice(0, 10);
 }
 
 function weightFromRow_(row) {
@@ -538,8 +548,8 @@ function applyEntry_(book, userId, op, now) {
     ? sheet.getRange(rowIndex, weight ? 5 : 7).getValue() || now
     : now;
   const values = weight
-    ? [op.recordId, userId, record.date, record.value, createdAt, now, ""]
-    : [op.recordId, userId, record.date, record.type,
+    ? [op.recordId, userId, "'" + record.date, record.value, createdAt, now, ""]
+    : [op.recordId, userId, "'" + record.date, record.type,
       safeCell_(record.description), safeCell_(record.notes),
       createdAt, now, ""];
 
