@@ -74,3 +74,9 @@ input:focus,textarea:focus,select:focus{border-color:#578b79}
 footer{color:#a5aea7;border-top:1px solid #eceee8;padding:29px 0;margin-top:55px;text-align:center;font-size:12px}
 .toast{position:fixed;bottom:25px;right:25px;background:#294a3f;color:white;border-radius:12px;padding:13px 18px;box-shadow:0 10px 28px rgba(0,0,0,.13);z-index:30;font-size:14px}
 @media(max-width:710px){.shell{padding:0 17px}.topbar{height:74px}.brand{font-size:23px}.privacy-note{margin:16px 0 19px}.main-nav{gap:0;margin-bottom:34px;justify-content:space-between}.nav-item{padding:13px 9px;font-size:13px}.page-head{margin-bottom:24px}.page-head p{font-size:14px}h1{letter-spacing:-1.3px}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stat-card{padding:17px;min-height:145px}.stat-card:last-child{grid-column:span 2;min-height:100px}.stat-value{font-size:28px}.feature-grid,.content-grid{grid-template-columns:1fr;gap:12px}.feature-card{min-height:210px;padding:23px}.panel{padding:20px}.record-actions{flex-direction:column}.toast{left:18px;right:18px;bottom:20px;text-align:center}}
+/* Comprobación del backend (solo diagnóstico, sin datos personales). */
+.backend-status{border:1px solid #e0e6df;background:#f6f8f5;padding:14px 15px;border-radius:11px;color:#61746b;font-size:13px;line-height:1.55;margin:15px 0;overflow-wrap:anywhere}
+.backend-status[data-state="working"]{background:#f4f2e9;color:#7b663c;border-color:#e8dec5}
+.backend-status[data-state="success"]{background:#edf7ef;color:#296346;border-color:#d4e6d8}
+.backend-status[data-state="error"]{background:#fff3f0;color:#9a4c3e;border-color:#f3d6cf}
+button:disabled{cursor:wait;opacity:.62}
