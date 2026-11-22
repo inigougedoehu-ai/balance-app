@@ -18,6 +18,28 @@ La aplicación tiene dos apartados principales: **Peso** y **Comidas**. El nombr
 - Exportación de los registros de la cuenta abierta en JSON (archivo **sin cifrar**).
 - Instalación como aplicación web (PWA).
 
+## Mejoras de seguimiento y perfil (versión 0.6)
+
+- En **Peso**, el gráfico muestra una línea horizontal discontinua para el peso objetivo; la escala incluye tanto los registros como el objetivo.
+- En **Ajustes → Datos personales**, cada cuenta puede guardar **altura (cm)** y **fecha de nacimiento**. La edad se calcula automáticamente.
+- En **Peso**, aparecen el IMC actual, la categoría orientativa para adultos de 20 años o más, el cambio respecto al pesaje anterior y la media de los últimos siete días con registros (máximo un pesaje por día).
+- Los calendarios están adaptados a Safari en iPhone; en Peso y Comidas hay un botón **Hoy**.
+- En **Comidas**, el historial se puede filtrar por tipo.
+
+Las categorías de IMC utilizan los puntos de corte habituales para adultos: bajo peso menor que 18,5; normopeso entre 18,5 y menos de 25; sobrepeso entre 25 y menos de 30; obesidad a partir de 30. El IMC es un indicador orientativo y **no** mide composición corporal ni constituye un diagnóstico. Para menores de 20 años no se aplica esta clasificación.
+
+### Actualizar Apps Script para sincronizar el perfil
+
+La web conserva el acceso y la sincronización de peso y comidas con el backend anterior, pero el formulario de altura y nacimiento solo se habilita con el backend `0.6.0-health-profile`.
+
+1. En la hoja privada, abrir **Extensiones → Apps Script**.
+2. Sustituir el contenido de `Code.gs` por `backend/Code.gs` de este repositorio. **No hace falta modificar `Bridge.html`.**
+3. Guardar y elegir **Implementar → Gestionar implementaciones → Editar (lápiz) → Nueva versión → Implementar**.
+4. Comprobar el resultado de la URL `/exec?action=health`, que debe indicar `0.6.0-health-profile`. Cerrar sesión y volver a iniciar sesión en la web.
+5. Entrar en **Ajustes → Datos personales** y rellenar altura y fecha de nacimiento para cada cuenta. La primera escritura amplía automáticamente `Settings` con las columnas `height_cm` y `birth_date`, sin borrar el objetivo ni las filas existentes.
+
+La aplicación guarda esos datos cifrados en IndexedDB y sincronizados en `Settings`, accesibles únicamente para la sesión de su cuenta. Los datos de nacimiento **sí son legibles para el propietario del Google Sheets**.
+
 ## Instalación en iPhone
 
 En Safari, abrir la dirección principal de Balance y seleccionar **Compartir → Añadir a pantalla de inicio**. El manifiesto usa `start_url: "./"`, por lo que el icono abre el inicio de sesión sin añadir un nombre de archivo al enlace.
