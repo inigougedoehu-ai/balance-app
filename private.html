@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#faf9f6">
+  <meta name="theme-color" content="#f6f7f4">
+  <meta name="color-scheme" content="light">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Balance">
-  <meta name="description" content="Balance: seguimiento personal de peso y comidas.">
+  <meta name="description" content="Balance: registro privado de peso y comidas.">
   <link rel="icon" type="image/svg+xml" href="./icon.svg">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./styles.css">
@@ -38,12 +39,12 @@
 
     <section class="login-screen" id="login-screen">
       <div class="login-intro">
-        <span class="eyebrow">BALANCE · ACCESO PRIVADO</span>
-        <h1>Tu espacio personal.</h1>
-        <p>Selecciona tu cuenta y continúa con tus registros.</p>
+        <span class="eyebrow">REGISTRO PERSONAL</span>
+        <h1>Tu seguimiento, en un solo lugar.</h1>
+        <p>Accede a tu historial de peso y comidas desde cualquier dispositivo.</p>
       </div>
       <form id="login-form" class="panel login-panel form-stack">
-        <h2>Iniciar sesión</h2>
+        <h2>Acceder a Balance</h2>
         <label for="login-user">Cuenta</label>
         <select id="login-user" required>
           <option value="inigo">Iñigo</option>
@@ -53,7 +54,7 @@
         <input id="login-password" type="password" autocomplete="current-password" minlength="14" maxlength="200" required>
         <button id="login-submit" type="submit" class="primary-button">Entrar en Balance</button>
         <div id="login-status" class="backend-status" role="status" aria-live="polite">Con internet se comprobará tu contraseña. No se guarda en el navegador.</div>
-        <p class="field-hint">Si el dispositivo tiene una copia cifrada anterior, podrás abrirla sin internet utilizando la contraseña de esa cuenta.</p>
+        <p class="field-hint">También puedes consultar la copia local sin conexión si ya has utilizado esta cuenta en este dispositivo.</p>
       </form>
     </section>
 
@@ -66,11 +67,11 @@
       <section class="view" data-view="peso">
         <div class="page-head">
           <span class="eyebrow">SEGUIMIENTO</span>
-          <h1>Tu peso</h1>
-          <p>Registra tus pesajes y consulta su evolución.</p>
+          <h1>Peso</h1>
+          <p>Consulta la evolución y añade nuevos registros.</p>
         </div>
         <div class="weight-summary" aria-label="Resumen de peso">
-          <div class="weight-summary-item">
+          <div class="weight-summary-item weight-summary-primary">
             <span>Último peso</span>
             <strong id="metric-weight">—</strong>
             <small id="metric-weight-date">Aún no hay registros</small>
@@ -83,7 +84,7 @@
         </div>
         <div class="content-grid">
           <article class="panel">
-            <h2 id="weight-form-title">Añadir un pesaje</h2>
+            <h2 id="weight-form-title">Nuevo pesaje</h2>
             <form id="weight-form" class="form-stack">
               <label for="weight-date">Fecha</label>
               <input id="weight-date" name="date" type="date" required>
@@ -99,20 +100,20 @@
           </article>
         </div>
         <article class="panel record-panel">
-          <div class="section-title"><h2>Historial de pesajes</h2><span id="weight-count">0 registros</span></div>
+          <div class="section-title"><h2>Historial</h2><span id="weight-count">0 registros</span></div>
           <div id="weight-list" class="record-list"></div>
         </article>
       </section>
 
       <section class="view" data-view="comidas" hidden>
         <div class="page-head">
-          <span class="eyebrow">REGISTRO</span>
-          <h1>Tus comidas</h1>
-          <p>Anota tus comidas y consulta lo que has registrado.</p>
+          <span class="eyebrow">DIARIO</span>
+          <h1>Comidas</h1>
+          <p>Registra tus comidas de forma sencilla, sin contar calorías.</p>
         </div>
         <div class="content-grid">
           <article class="panel">
-            <h2 id="meal-form-title">Añadir una comida</h2>
+            <h2 id="meal-form-title">Nueva comida</h2>
             <form id="meal-form" class="form-stack">
               <label for="meal-date">Fecha</label>
               <input id="meal-date" name="date" type="date" required>
@@ -129,7 +130,7 @@
             </form>
           </article>
           <article class="panel record-panel">
-            <div class="section-title"><h2>Historial de comidas</h2><span id="meal-count">0 registros</span></div>
+            <div class="section-title"><h2>Historial</h2><span id="meal-count">0 registros</span></div>
             <div id="meal-list" class="record-list"></div>
           </article>
         </div>
@@ -138,33 +139,33 @@
       <section class="view" data-view="ajustes" hidden>
         <button type="button" class="back-button" id="settings-back">← Volver</button>
         <div class="page-head">
-          <span class="eyebrow">TU CUENTA</span>
+          <span class="eyebrow">CUENTA Y DATOS</span>
           <h1>Ajustes</h1>
-          <p>Configura tu objetivo y gestiona tus datos.</p>
+          <p>Objetivo, sincronización y exportación de registros.</p>
         </div>
         <article class="panel settings-panel">
           <h2>Objetivo de peso</h2>
           <form id="goal-form" class="form-stack">
             <label for="goal-value">Peso objetivo (kg)</label>
             <input id="goal-value" name="goal" type="number" step="0.1" min="15" max="500" placeholder="Ej.: 70,0" inputmode="decimal">
-            <p class="field-hint">Déjalo vacío para quitar el objetivo. No hay plazos ni metas semanales obligatorias.</p>
+            <p class="field-hint">Deja el campo vacío para quitar el objetivo.</p>
             <button type="submit" class="primary-button">Guardar objetivo</button>
           </form>
         </article>
         <article class="panel settings-panel">
           <h2>Sincronización</h2>
           <div id="sync-status" class="backend-status" role="status" aria-live="polite">Se comprobará al iniciar sesión.</div>
-          <p class="field-hint">Los cambios se guardan en el dispositivo antes de enviarse a Google. Cuando estás sin conexión, quedan pendientes hasta una sesión con internet.</p>
+          <p class="field-hint">Los cambios se guardan primero en el dispositivo. Los pendientes se envían al volver a iniciar sesión con conexión.</p>
         </article>
         <article class="panel settings-panel">
           <h2>Almacenamiento</h2>
-          <p class="muted">Los registros se guardan cifrados para esta cuenta en tu navegador y se sincronizan con Sheets. La exportación se descarga sin cifrar: guárdala en un lugar privado.</p>
+          <p class="muted">Puedes guardar una copia de tus registros. El archivo exportado no está cifrado.</p>
           <button id="export-data" class="secondary-button" type="button">Exportar mis registros (JSON)</button>
-          <p class="field-hint">Este archivo contiene solo los registros de la cuenta abierta, sin contraseña ni token.</p>
+          <p class="field-hint">Contiene los registros de esta cuenta. Guárdalo en un lugar privado.</p>
         </article>
       </section>
     </main>
-    <footer>Balance</footer>
+    <footer>Balance · Registro personal</footer>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <script type="module" src="./private-app.js"></script>
