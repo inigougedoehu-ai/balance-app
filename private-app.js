@@ -79,6 +79,7 @@ function createComposer(){
   $("composer-backdrop").addEventListener("click",hide);
   $("composer-select-weight").addEventListener("click",()=>forms?.open("weight"));
   $("composer-select-meal").addEventListener("click",()=>forms?.open("meal"));
+  $("composer-select-measure").addEventListener("click",()=>features?.showMeasure());
   document.addEventListener("keydown",event=>{
     if(event.key==="Escape"&&!overlay.hidden){
       event.preventDefault();

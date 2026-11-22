@@ -54,7 +54,7 @@ No se necesitan cambios nuevos en Apps Script para estas funciones. Para guardar
 
 ## Diario con calendario, tendencia y medidas (0.7)
 
-La navegación mantiene las dos secciones principales y el botón + para peso y comidas.
+La navegación mantiene las dos secciones principales. El botón **+** ofrece tres acciones: Registrar peso, Registrar comida y Registrar medidas. El historial de medidas sigue dentro de Peso; ya no incluye un botón redundante para añadirlas.
 
 - **Calendario** en Peso y Comidas: navegación mensual; los días con registros indican si hay pesajes, comidas, medidas o notas. Al seleccionar un día, se muestran juntos sus datos y se puede añadir o editar una nota de hasta 1000 caracteres.
 - **Resumen mensual** dentro del calendario: número de pesajes, comidas, días con comidas, registros de medidas y notas; variación de peso calculada entre el primer y el último pesaje del mes, cuando existen al menos dos.
