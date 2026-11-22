@@ -11,7 +11,7 @@
  * pegar todo este archivo en Code.gs y ejecutar setupDatabase una vez.
  */
 
-const BALANCE_VERSION = "0.3.0-auth-check";
+const BALANCE_VERSION = "0.4.0-bridge-test";
 
 const BALANCE_TABLES = Object.freeze({
   Users: [
@@ -204,8 +204,36 @@ function testAccount_(body) {
   return { ok: true };
 }
 
+/**
+ * Puente HTML seguro para comunicaciones privadas entre el front-end
+ * GitHub Pages y Apps Script. Por ahora solo prueba conectividad.
+ *
+ * No hay ninguna operación de datos ni sesiones habilitada aquí.
+ */
+function bridgeHealthCheck() {
+  return {
+    ok: true,
+    app: "Balance",
+    version: BALANCE_VERSION,
+    bridge: "ready"
+  };
+}
+
+function balanceBridgePage_(params) {
+  const nonce = String(params.nonce || "");
+  if (!/^[a-f0-9-]{36}$/.test(nonce)) {
+    return HtmlService.createHtmlOutput("Solicitud incorrecta");
+  }
+  const template = HtmlService.createTemplateFromFile("Bridge");
+  template.bridgeNonce = nonce;
+  return template.evaluate()
+    .setTitle("Balance - Conexión privada")
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
 function doGet(event) {
   const params = (event && event.parameter) || {};
+  if (params.action === "bridge") return balanceBridgePage_(params);
   let result;
 
   if (params.action === "health") {
