@@ -2,23 +2,32 @@
 
 Aplicación web instalable (PWA) para el seguimiento personal del peso y de las comidas. Código público; los registros personales no deben publicarse en GitHub.
 
-## Estado del proyecto
+## Acceso principal e instalación en iPhone
 
-**Versión de prueba local. No utilices aún información personal real.**
+La aplicación privada se abre desde la dirección principal:
 
-La interfaz inicial permite:
-- Registrar, modificar y eliminar pesajes con su fecha.
-- Visualizar el historial y una gráfica de evolución.
-- Registrar comidas con fecha, tipo, descripción y notas opcionales, sin calorías.
-- Establecer o eliminar un objetivo de peso.
-- Exportar los registros locales a un archivo JSON.
-- Consultar el contenido sin conexión después de la primera carga.
+**https://inigougedoehu-ai.github.io/balance-app/**
 
-Los registros se guardan exclusivamente en **IndexedDB, en el navegador actual**. Todavía no existen autenticación, separación de usuarios, cifrado local ni sincronización con Sheets. Los datos locales se pueden perder si se borran los datos del navegador. **No introduzcas datos reales de salud en esta versión.**
+`index.html` es ahora la pantalla de acceso de las cuentas Iñigo y Clara, con contraseñas independientes, cifrado local en IndexedDB y sincronización con Google Sheets a través de Apps Script. `private.html` sigue funcionando como enlace alternativo y `demo.html` conserva la versión antigua de pruebas.
+
+El manifiesto de la PWA usa `start_url: "./"`, por lo que el icono instalado en el iPhone abre la dirección principal y, por tanto, el inicio de sesión.
+
+### Añadir a la pantalla de inicio
+
+Abrir la URL principal en Safari → **Compartir** → **Añadir a pantalla de inicio**. Si hay un icono antiguo que abre la interfaz de prueba, sustituir ese icono por uno nuevo después de comprobar que la dirección principal ya muestra el inicio de sesión. No borrar datos del sitio desde Ajustes del navegador: allí se almacenan las copias locales cifradas.
+
+### Estado de seguridad
+
+- Acceso mediante cuentas separadas y tokens temporales validados en el servidor.
+- Cada operación recibe el identificador de usuario de la sesión, no del navegador.
+- Copias locales cifradas por contraseña y cola de sincronización con identificadores únicos.
+- Las contraseñas y los registros no utilizan JSONP.
+- **Mantener copias de seguridad de Google Sheets y probar la recuperación después de cambiar de dispositivo.** La copia de Sheets no está cifrada frente a la cuenta Google propietaria.
+- La versión anterior de prueba sigue disponible en `demo.html`, pero guarda sus datos en otra base local sin cifrar.
 
 ## Nueva vista privada en pruebas (0.5)
 
-La versión clásica de Balance sigue en `index.html`. Para probar el acceso privado y la sincronización, abre `private.html` **solo después de actualizar Apps Script**.
+La aplicación privada ahora está en `index.html` (raíz). `private.html` sigue disponible como alias; la antigua demostración se conserva en `demo.html`.
 
 ### Preparación
 
