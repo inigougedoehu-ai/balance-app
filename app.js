@@ -1,3 +1,5 @@
+// Dirección pública del backend. No es una contraseña ni da acceso a los datos.
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbyKXqubwCasBQ0MSKhESYsG9GQM4w39Shqb_JKHhl62Va_5IpQwaOxyHwb3tI-t4mE/exec";
 const DATABASE = "balance-local-v1";
 const DB_VERSION = 1;
 let db;
@@ -235,7 +237,98 @@ async function deleteEntry(record) {
     showToast("Registro eliminado");
   } catch (error) { console.error(error); showToast("No se ha podido eliminar el registro"); }
 }
+/**
+ * Apps Script no permite leer directamente todas las respuestas cross-origin
+ * desde GitHub Pages. Usamos JSONP exclusivamente para las dos acciones
+ * públicas de diagnóstico. No usarlo para credenciales ni datos personales.
+ */
+function publicDiagnostic(action, values = {}) {
+  return new Promise((resolve, reject) => {
+    const callbackName = "__balanceCheck_" + crypto.randomUUID().replaceAll("-", "");
+    const url = new URL(BACKEND_URL);
+    url.searchParams.set("action", action);
+    url.searchParams.set("callback", callbackName);
+    for (const [key, value] of Object.entries(values)) url.searchParams.set(key, value);
+
+    const script = document.createElement("script");
+    let finished = false;
+    const cleanup = () => {
+      script.remove();
+      delete window[callbackName];
+      clearTimeout(timer);
+    };
+    const finish = (error, result) => {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      if (error) reject(error);
+      else resolve(result);
+    };
+    const timer = setTimeout(() => finish(new Error("Tiempo de espera agotado")), 12000);
+    window[callbackName] = result => finish(null, result);
+    script.onerror = () => finish(new Error("Google Apps Script no respondió a la consulta"));
+    script.src = url.toString();
+    document.head.appendChild(script);
+  });
+}
+const pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+async function testBackendConnection() {
+  const button = $("check-backend");
+  const status = $("backend-status");
+  button.disabled = true;
+  status.dataset.state = "working";
+  status.textContent = "Comprobando el servidor de Google…";
+
+  try {
+    const health = await publicDiagnostic("health");
+    if (!health?.ok || health.app !== "Balance") {
+      throw new Error("El servidor no ha reconocido Balance");
+    }
+    if (!health.configured) {
+      throw new Error("El servidor responde, pero setupDatabase no está configurado");
+    }
+
+    status.textContent = "Servidor activo. Comprobando una petición de ida y vuelta…";
+    const requestId = crypto.randomUUID().replaceAll("-", "");
+    // no-cors permite el envío simple sin leer la respuesta opaca.
+    // NO implica que Apps Script haya aceptado o guardado el mensaje:
+    // la confirmación se obtiene exclusivamente con probe_status.
+    await fetch(BACKEND_URL, {
+      method: "POST",
+      mode: "no-cors",
+      credentials: "omit",
+      redirect: "follow",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({ action: "probe", request_id: requestId })
+    });
+
+    let confirmed = false;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      await pause(650 + attempt * 250);
+      const result = await publicDiagnostic("probe_status", { request_id: requestId });
+      if (!result?.ok) throw new Error("No se pudo consultar la confirmación de la prueba");
+      if (result.received === true) {
+        confirmed = true;
+        break;
+      }
+    }
+    if (!confirmed) throw new Error("El servidor respondió, pero no confirmó la petición enviada");
+
+    status.dataset.state = "success";
+    status.textContent = "Conexión confirmada: Apps Script recibe y responde. No se ha escrito ninguna fila de Sheets.";
+    showToast("Conexión con Google comprobada");
+  } catch (error) {
+    console.error("Balance - diagnóstico del backend:", error);
+    status.dataset.state = "error";
+    status.textContent = "No se ha podido completar la prueba: " + (error?.message || "error desconocido") + ".";
+  } finally {
+    button.disabled = false;
+  }
+}
+
 function bindEvents() {
+  $("check-backend").addEventListener("click", testBackendConnection);
   document.querySelectorAll("[data-route]").forEach(button =>
     button.addEventListener("click", (event) => { event.preventDefault(); route(button.dataset.route); })
   );
