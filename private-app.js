@@ -25,6 +25,7 @@ async function login(event){
     if(!["inigo","clara"].includes(userId)||password.length<14)throw Error("Introduce una cuenta y su contraseña.");
     status("login-status","Comprobando conexión y credenciales…","working");
     try{
+      if(!navigator.onLine)throw Error("Sin conexión");
       const health=await request("health");
       if(!health?.ok||health.version!==REQUIRED_VERSION){
         throw Error("Debes actualizar Code.gs y Bridge.html y publicar una nueva versión de Apps Script.");
