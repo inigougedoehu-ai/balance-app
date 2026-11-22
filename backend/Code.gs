@@ -1,8 +1,8 @@
 /**
- * Balance — Fase 3: diagnóstico y comprobación de contraseñas.
+ * Balance — backend de sesiones, registros y perfil personal.
  *
  * IMPORTANTE:
- * Este archivo NO implementa el acceso a datos personales.
+ * El acceso a datos privados exige una sesión validada.
  * Backend de dos cuentas, con sesiones y registros separados por usuario.
  * Los datos personales y las contraseñas solo viajan a través de HTMLService
  * + google.script.run; jamás por endpoints JSONP o URLs públicas.
@@ -12,7 +12,7 @@
  * pegar todo este archivo en Code.gs y ejecutar setupDatabase una vez.
  */
 
-const BALANCE_VERSION = "0.5.0-private-sync";
+const BALANCE_VERSION = "0.6.0-health-profile";
 
 const BALANCE_TABLES = Object.freeze({
   Users: [
@@ -28,7 +28,7 @@ const BALANCE_TABLES = Object.freeze({
     "notes", "created_at", "updated_at", "deleted_at"
   ],
   Settings: [
-    "user_id", "goal_weight_kg", "updated_at"
+    "user_id", "goal_weight_kg", "updated_at", "height_cm", "birth_date"
   ],
   Operations: [
     "operation_id", "user_id", "entity_type", "record_id",
@@ -39,6 +39,23 @@ const BALANCE_TABLES = Object.freeze({
     "revoked_at"
   ]
 });
+
+/**
+ * Amplía Settings sin borrar el objetivo ya guardado (A:C).
+ * También puede invocarse al guardar el perfil, sin reinstalar el proyecto.
+ */
+function ensureProfileColumns_(sheet) {
+  const expected = ["height_cm", "birth_date"];
+  const existing = sheet.getRange(1, 4, 1, 2).getValues()[0];
+  if (existing[0] === "" && existing[1] === "") {
+    sheet.getRange(1, 4, 1, 2).setValues([expected]);
+    sheet.getRange(1, 4, 1, 2)
+      .setBackground("#385e54").setFontColor("#ffffff").setFontWeight("bold");
+    sheet.autoResizeColumns(4, 2);
+  } else if (JSON.stringify(existing) !== JSON.stringify(expected)) {
+    throw new Error("Las columnas de perfil de Settings no coinciden; no se modifica.");
+  }
+}
 
 function setupDatabase() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
@@ -65,6 +82,7 @@ function setupDatabase() {
         .setFontWeight("bold");
       sheet.autoResizeColumns(1, columns.length);
     } else {
+      if (name === "Settings") ensureProfileColumns_(sheet);
       const existing = sheet.getRange(1, 1, 1, columns.length).getValues()[0];
       if (JSON.stringify(existing) !== JSON.stringify(columns)) {
         throw new Error("La pestaña " + name + " tiene columnas diferentes. No se modifica.");
@@ -206,10 +224,7 @@ function testAccount_(body) {
 }
 
 /**
- * Puente HTML seguro para comunicaciones privadas entre el front-end
- * GitHub Pages y Apps Script. Por ahora solo prueba conectividad.
- *
- * No hay ninguna operación de datos ni sesiones habilitada aquí.
+ * Diagnóstico del puente HTMLService, que también sirve las llamadas privadas.
  */
 function bridgeHealthCheck() {
   return {
@@ -461,12 +476,21 @@ function readState_(book, userId) {
       .map(mealFromRow_)
     : [];
   let goal = null;
+  let heightCm = null;
+  let birthDate = null;
   if (settingsSheet.getLastRow() > 1) {
-    const rows = settingsSheet.getRange(2, 1, settingsSheet.getLastRow() - 1, 3).getValues();
+    const rows = settingsSheet.getRange(2, 1, settingsSheet.getLastRow() - 1, 5).getValues();
     const row = rows.find(function (r) { return String(r[0]) === userId; });
-    if (row && row[1] !== "" && row[1] !== null) goal = Number(row[1]);
+    if (row) {
+      if (row[1] !== "" && row[1] !== null) goal = Number(row[1]);
+      if (row[3] !== "" && row[3] !== null) heightCm = Number(row[3]);
+      if (row[4] !== "" && row[4] !== null) birthDate = dateText_(row[4]);
+    }
   }
-  return { ok: true, weights: weights, meals: meals, goal: goal, serverAt: new Date().toISOString() };
+  return {
+    ok: true, weights: weights, meals: meals, goal: goal,
+    heightCm: heightCm, birthDate: birthDate, serverAt: new Date().toISOString()
+  };
 }
 
 function balanceGetState(token) {
@@ -478,6 +502,30 @@ function assertOp_(op) {
   if (!op || typeof op !== "object" ||
       !/^[0-9a-f-]{36}$/i.test(String(op.id || ""))) {
     throw new Error("Identificador de operación inválido");
+  }
+  if (op.kind === "profile") {
+    const value = op.value;
+    if (op.action !== "set" || !value || typeof value !== "object") {
+      throw new Error("Operación de perfil inválida");
+    }
+    if (value.heightCm !== null &&
+        (!Number.isFinite(value.heightCm) || value.heightCm < 90 || value.heightCm > 250)) {
+      throw new Error("Altura no válida");
+    }
+    if (value.birthDate !== null) {
+      if (typeof value.birthDate !== "string" ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(value.birthDate)) {
+        throw new Error("Fecha de nacimiento inválida");
+      }
+      const date = new Date(value.birthDate + "T12:00:00Z");
+      const maxDate = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
+      if (!Number.isFinite(date.getTime()) ||
+          date.toISOString().slice(0, 10) !== value.birthDate ||
+          value.birthDate < "1900-01-01" || value.birthDate > maxDate) {
+        throw new Error("Fecha de nacimiento fuera de rango");
+      }
+    }
+    return;
   }
   if (op.kind === "goal") {
     if (op.action !== "set") throw new Error("Operación de objetivo inválida");
@@ -570,6 +618,22 @@ function applyGoal_(book, userId, op, now) {
   else sheet.appendRow(values);
 }
 
+function applyProfile_(book, userId, op, now) {
+  const sheet = book.getSheetByName("Settings");
+  ensureProfileColumns_(sheet);
+  const rows = sheet.getLastRow() > 1
+    ? sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues() : [];
+  const index = rows.findIndex(function (r) { return String(r[0]) === userId; });
+  const height = op.value.heightCm === null ? "" : op.value.heightCm;
+  const birth = op.value.birthDate === null ? "" : "'" + op.value.birthDate;
+  if (index >= 0) {
+    // Conservar siempre el objetivo que ya estaba guardado en la columna B.
+    sheet.getRange(index + 2, 3, 1, 3).setValues([[now, height, birth]]);
+  } else {
+    sheet.appendRow([userId, "", now, height, birth]);
+  }
+}
+
 function balanceApplyOperations(token, ops) {
   if (!Array.isArray(ops) || ops.length === 0 || ops.length > MAX_BATCH_) {
     throw new Error("Lote de sincronización no válido");
@@ -592,6 +656,7 @@ function balanceApplyOperations(token, ops) {
       if (!already[op.id]) {
         const now = new Date().toISOString();
         if (op.kind === "goal") applyGoal_(book, userId, op, now);
+        else if (op.kind === "profile") applyProfile_(book, userId, op, now);
         else applyEntry_(book, userId, op, now);
         // El marcador se guarda después de aplicar el cambio.
         history.appendRow([op.id, userId, op.kind, op.recordId || "", op.action, now]);
