@@ -22,7 +22,7 @@ La aplicación tiene dos apartados principales: **Peso** y **Comidas**. El nombr
 
 - En **Peso**, el gráfico muestra una línea horizontal discontinua para el peso objetivo; la escala incluye tanto los registros como el objetivo.
 - En **Ajustes → Datos personales**, cada cuenta puede guardar **altura (cm)** y **fecha de nacimiento**. La edad se calcula automáticamente.
-- En **Peso**, aparecen el IMC actual, la categoría orientativa para adultos de 20 años o más, el cambio respecto al pesaje anterior y la media de los últimos siete días con registros (máximo un pesaje por día).
+- En **Peso**, aparecen el IMC actual, la categoría orientativa para adultos de 20 años o más, el cambio respecto al pesaje anterior y la media de los últimos siete días con registros (máximo un pesaje por día y al menos dos días distintos).
 - Los calendarios están adaptados a Safari en iPhone; en Peso y Comidas hay un botón **Hoy**.
 - En **Comidas**, el historial se puede filtrar por tipo.
 
