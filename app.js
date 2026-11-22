@@ -348,6 +348,20 @@ async function testAccountPassword(event) {
   status.dataset.state = "working";
   status.textContent = "Comprobando la contraseña con Apps Script…";
   try {
+    const health = await publicDiagnostic("health");
+    if (!health?.ok || health.app !== "Balance") {
+      throw new Error("Apps Script no reconoce Balance. Revisa la implementación.");
+    }
+    if (health.version !== "0.3.0-auth-check") {
+      throw new Error(
+        "Apps Script está ejecutando la versión " +
+        (health.version || "desconocida") +
+        ". Necesitas actualizar la implementación a una Nueva versión desde Apps Script."
+      );
+    }
+    if (!health.configured) {
+      throw new Error("El servidor no encuentra la base de datos. Ejecuta setupDatabase.");
+    }
     await fetch(BACKEND_URL, {
       method: "POST",
       mode: "no-cors",
