@@ -22,14 +22,14 @@
 
     <div class="privacy-note" role="note">
       <span aria-hidden="true">ⓘ</span>
-      <div><strong>Solo pruebas, por ahora.</strong> Esta versión guarda los registros únicamente en este navegador. Todavía no hay inicio de sesión ni conexión con Google Sheets. No introduzcas información personal real hasta activar las cuentas privadas.</div>
+      <div><strong>Solo pruebas, por ahora.</strong> Esta versión guarda los registros únicamente en este navegador. Todavía no hay inicio de sesión ni sincronización de registros con Google Sheets. En Ajustes puedes comprobar la conexión del servidor, pero no envía datos de peso ni comidas. No introduzcas información personal real hasta activar las cuentas privadas.</div>
     </div>
 
     <nav class="main-nav" aria-label="Secciones">
       <button type="button" class="nav-item active" data-route="inicio" aria-current="page">Inicio</button>
       <button type="button" class="nav-item" data-route="peso">Peso</button>
       <button type="button" class="nav-item" data-route="comidas">Comidas</button>
-      <button type="button" class="nav-item" data-route="objetivo">Objetivo</button>
+      <button type="button" class="nav-item" data-route="objetivo">Ajustes</button>
     </nav>
 
     <main id="main-content">
@@ -149,6 +149,13 @@
           </form>
         </article>
         <article class="panel settings-panel">
+          <h2>Conexión con Google</h2>
+          <p class="muted">Comprueba que la aplicación puede comunicarse con Google Apps Script. Se hará una prueba sin registrar ninguna comida, peso ni dato personal.</p>
+          <div id="backend-status" class="backend-status" role="status" aria-live="polite">Conexión no comprobada</div>
+          <button id="check-backend" class="secondary-button" type="button">Probar conexión con Google</button>
+          <p class="field-hint">La comprobación utiliza un identificador aleatorio de prueba y no escribe filas en Google Sheets.</p>
+        </article>
+        <article class="panel settings-panel">
           <h2>Almacenamiento</h2>
           <p class="muted">En esta versión todo se almacena en tu navegador con IndexedDB. No se comparte con Google Sheets ni con ningún servidor.</p>
           <button id="export-data" class="secondary-button" type="button">Exportar copia de prueba (JSON)</button>
@@ -156,7 +163,7 @@
         </article>
       </section>
     </main>
-    <footer>Balance · Versión inicial · Guardado local, sin sincronización</footer>
+    <footer>Balance · Conexión en pruebas · Los registros siguen siendo locales</footer>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <script type="module" src="./app.js"></script>
