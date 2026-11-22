@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#faf9f6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Balance">
   <meta name="description" content="Balance: seguimiento personal de peso y comidas.">
   <link rel="icon" type="image/svg+xml" href="./icon.svg">
   <link rel="manifest" href="./manifest.webmanifest">
@@ -17,22 +19,47 @@
         <span class="brand-mark" aria-hidden="true">b<span class="brand-dot">.</span></span>
         <span>balance</span>
       </a>
-      <span class="environment"><span class="environment-dot"></span> Versión de prueba</span>
+      <div class="user-actions" id="user-actions" hidden>
+        <span class="environment" id="account-label">Cuenta privada</span>
+        <button type="button" id="sync-now" class="text-button">Sincronizar</button>
+        <button type="button" id="logout" class="text-button">Salir</button>
+      </div>
     </header>
 
     <div class="privacy-note" role="note">
       <span aria-hidden="true">ⓘ</span>
-      <div><strong>Solo pruebas, por ahora.</strong> Esta versión guarda los registros únicamente en este navegador. Todavía no hay inicio de sesión ni sincronización de registros con Google Sheets. En Ajustes puedes comprobar la conexión del servidor, pero no envía datos de peso ni comidas. No introduzcas información personal real hasta activar las cuentas privadas.</div>
+      <div><strong>Versión privada en pruebas.</strong> Estos registros se guardan cifrados por cuenta y se sincronizan con Google Sheets mediante Apps Script. Utiliza solo datos ficticios hasta que comprobemos el funcionamiento con ambas cuentas. Los registros locales de la versión anterior no se importan automáticamente.</div>
     </div>
 
-    <nav class="main-nav" aria-label="Secciones">
+    <section class="login-screen" id="login-screen">
+      <div class="login-intro">
+        <span class="eyebrow">BALANCE · ACCESO PRIVADO</span>
+        <h1>Tu espacio personal.</h1>
+        <p>Selecciona tu cuenta y continúa con tus registros.</p>
+      </div>
+      <form id="login-form" class="panel login-panel form-stack">
+        <h2>Iniciar sesión</h2>
+        <label for="login-user">Cuenta</label>
+        <select id="login-user" required>
+          <option value="inigo">Iñigo</option>
+          <option value="clara">Clara</option>
+        </select>
+        <label for="login-password">Contraseña</label>
+        <input id="login-password" type="password" autocomplete="current-password" minlength="14" maxlength="200" required>
+        <button id="login-submit" type="submit" class="primary-button">Entrar en Balance</button>
+        <div id="login-status" class="backend-status" role="status" aria-live="polite">Con internet se comprobará tu contraseña. No se guarda en el navegador.</div>
+        <p class="field-hint">Si el dispositivo tiene una copia cifrada anterior, podrás abrirla sin internet utilizando la contraseña de esa cuenta.</p>
+      </form>
+    </section>
+
+    <nav class="main-nav" aria-label="Secciones" hidden>
       <button type="button" class="nav-item active" data-route="inicio" aria-current="page">Inicio</button>
       <button type="button" class="nav-item" data-route="peso">Peso</button>
       <button type="button" class="nav-item" data-route="comidas">Comidas</button>
       <button type="button" class="nav-item" data-route="objetivo">Ajustes</button>
     </nav>
 
-    <main id="main-content">
+    <main id="main-content" hidden>
       <section class="view" data-view="inicio">
         <div class="page-head">
           <span class="eyebrow">TU SEGUIMIENTO</span>
@@ -149,45 +176,21 @@
           </form>
         </article>
         <article class="panel settings-panel">
-          <h2>Conexión con Google</h2>
-          <p class="muted">Comprueba que la aplicación puede comunicarse con Google Apps Script. Se hará una prueba sin registrar ninguna comida, peso ni dato personal.</p>
-          <div id="backend-status" class="backend-status" role="status" aria-live="polite">Conexión no comprobada</div>
-          <button id="check-backend" class="secondary-button" type="button">Probar conexión con Google</button>
-          <p class="field-hint">La comprobación utiliza un identificador aleatorio de prueba y no escribe filas en Google Sheets.</p>
-        </article>
-        <article class="panel settings-panel">
-          <h2>Conexión privada con Google</h2>
-          <p class="muted">Esta prueba utiliza el canal privado de Apps Script, sin JSONP y sin transmitir contraseñas ni registros. Es el paso previo al inicio de sesión y la sincronización.</p>
-          <div id="bridge-status" class="backend-status" role="status" aria-live="polite">Puente privado sin comprobar</div>
-          <button id="check-bridge" class="secondary-button" type="button">Probar conexión privada</button>
-        </article>
-        <article class="panel settings-panel">
-          <h2>Comprobar las cuentas privadas</h2>
-          <p class="muted">En esta fase comprobamos que el servidor reconoce vuestras contraseñas, sin crear todavía sesiones ni dar acceso a registros. No guardamos aquí la contraseña.</p>
-          <form id="account-test-form" class="form-stack">
-            <label for="account-name">Cuenta</label>
-            <select id="account-name" name="account" required>
-              <option value="inigo">Iñigo</option>
-              <option value="clara">Clara</option>
-            </select>
-            <label for="account-password">Contraseña de esa cuenta</label>
-            <input id="account-password" name="password" type="password" autocomplete="off" minlength="14" maxlength="200" required placeholder="Contraseña configurada en Apps Script">
-            <button type="submit" class="primary-button" id="account-test-submit">Comprobar contraseña</button>
-          </form>
-          <div id="account-test-status" class="backend-status" role="status" aria-live="polite">Primero configura las dos contraseñas en Apps Script.</div>
-          <p class="field-hint">Esta comprobación no inicia sesión. No introduzcas aún registros reales de salud.</p>
+          <h2>Sincronización</h2>
+          <div id="sync-status" class="backend-status" role="status" aria-live="polite">Se comprobará al iniciar sesión.</div>
+          <p class="field-hint">Los cambios se guardan en el dispositivo antes de enviarse a Google. Cuando estás sin conexión, quedan pendientes hasta una sesión con internet.</p>
         </article>
         <article class="panel settings-panel">
           <h2>Almacenamiento</h2>
-          <p class="muted">En esta versión todo se almacena en tu navegador con IndexedDB. No se comparte con Google Sheets ni con ningún servidor.</p>
-          <button id="export-data" class="secondary-button" type="button">Exportar copia de prueba (JSON)</button>
-          <p class="field-hint">La exportación contiene los registros de este navegador. Guárdala en un lugar privado.</p>
+          <p class="muted">Los registros se guardan cifrados para esta cuenta en tu navegador y se sincronizan con Sheets. La exportación se descarga sin cifrar: guárdala en un lugar privado.</p>
+          <button id="export-data" class="secondary-button" type="button">Exportar mis registros (JSON)</button>
+          <p class="field-hint">Este archivo contiene solo los registros de la cuenta abierta, sin contraseña ni token.</p>
         </article>
       </section>
     </main>
-    <footer>Balance · Conexión en pruebas · Los registros siguen siendo locales</footer>
+    <footer>Balance · Seguimiento privado y sincronización</footer>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./private-app.js"></script>
 </body>
 </html>
