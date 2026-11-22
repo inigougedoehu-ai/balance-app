@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Balance — conexión privada</title>
+</head>
+<body>
+  <script>
+  "use strict";
+  (function () {
+    // Únicamente aceptamos órdenes de la web oficial de Balance.
+    const BALANCE_ORIGIN = "https://inigougedoehu-ai.github.io";
+    const nonce = "<?= bridgeNonce ?>";
+    const version = "balance-bridge-v1";
+
+    function announce(type, extra) {
+      window.top.postMessage(
+        Object.assign({ app: "balance", bridge: version, type: type, nonce: nonce }, extra || {}),
+        BALANCE_ORIGIN
+      );
+    }
+
+    window.addEventListener("message", function (event) {
+      if (event.origin !== BALANCE_ORIGIN || event.source !== window.top) return;
+      const message = event.data;
+      if (!message || message.app !== "balance" ||
+          message.bridge !== version || message.nonce !== nonce) return;
+
+      // ÚNICA acción aceptada en esta fase: comprobar conexión.
+      if (message.type === "ping") {
+        google.script.run
+          .withSuccessHandler(function (result) {
+            announce("pong", { result: result });
+          })
+          .withFailureHandler(function () {
+            announce("error", { message: "El servidor no respondió al puente privado." });
+          })
+          .bridgeHealthCheck();
+      }
+    });
+
+    announce("ready");
+  })();
+  </script>
+</body>
+</html>
