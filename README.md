@@ -16,6 +16,26 @@ La interfaz inicial permite:
 
 Los registros se guardan exclusivamente en **IndexedDB, en el navegador actual**. Todavía no existen autenticación, separación de usuarios, cifrado local ni sincronización con Sheets. Los datos locales se pueden perder si se borran los datos del navegador. **No introduzcas datos reales de salud en esta versión.**
 
+## Fase 3: configurar y comprobar dos contraseñas
+
+La infraestructura está preparada, pero **aún no existen sesiones de usuario** y los datos registrados siguen siendo locales y de demostración.
+
+1. Abre la hoja `Balance - Base de datos` → **Extensiones → Apps Script**.
+2. Sustituye el contenido de `Code.gs` por el archivo actualizado `backend/Code.gs` de este repositorio. Guarda.
+3. En **Configuración del proyecto** (rueda dentada) → **Propiedades de secuencia de comandos**, añade las dos propiedades privadas:
+   - `BALANCE_PASSWORD_INIGO`: contraseña propia de Iñigo (14 a 200 caracteres).
+   - `BALANCE_PASSWORD_CLARA`: contraseña propia de Clara (14 a 200 caracteres).
+4. En el editor selecciona y ejecuta `provisionAccounts` manualmente. Esta función genera sales aleatorias, hashes HMAC-SHA256 con secreto adicional privado y guarda únicamente estos verificadores en `Users`. También elimina las dos propiedades con las contraseñas en claro. **No compartas las contraseñas en el chat ni en GitHub.**
+5. Comprueba que las cuentas `inigo` y `clara` aparecen en `Users`, sin texto de contraseña.
+6. Apps Script → **Implementar → Gestionar implementaciones → Editar** (icono lápiz) → **Versión: Nueva versión** → **Implementar**. Mantén la misma URL de la implementación `/exec`.
+7. Abre Balance y ve a **Ajustes → Comprobar las cuentas privadas**. Selecciona cada persona y prueba su contraseña.
+
+**Qué hace la prueba:** envía el usuario y su contraseña a Apps Script mediante HTTPS, dentro del cuerpo POST. El backend verifica un hash de la clave y almacena temporalmente solo el resultado ("valid", "invalid" o "limited") asociado a un identificador aleatorio. El navegador consulta ese resultado sin transmitir las contraseñas en la URL.
+
+**Qué NO hace:** no crea sesiones, no devuelve tokens, no permite leer los datos privados y no sincroniza ninguna comida ni ningún peso. El formulario no conserva la contraseña después de la comprobación. El acceso a los registros requerirá otra fase técnica para evitar JSONP con datos personales. Solo tras comprobar ese canal podremos utilizar registros reales.
+
+No uses nombres, contraseñas ni claves reales dentro de los archivos de GitHub. Las dos propiedades de contraseña se eliminan tras una ejecución satisfactoria.
+
 ## Comprobación de conexión con Google Apps Script
 
 En la pestaña **Ajustes → Conexión con Google** pulsa **Probar conexión con Google**.
