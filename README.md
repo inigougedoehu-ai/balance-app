@@ -52,6 +52,12 @@ La navegación principal tiene únicamente **Peso** y **Comidas**. El botón flo
 
 No se necesitan cambios nuevos en Apps Script para estas funciones. Para guardar altura y fecha de nacimiento, sigue siendo necesario tener publicada la versión `0.6.0-health-profile` del backend.
 
+## Organización de Ajustes
+
+El menú de la cuenta abre una pantalla principal de **Ajustes** con dos grupos: **Personalización y seguimiento** (Apariencia, Datos personales, Objetivo de peso) y **Datos y privacidad** (Sincronización y Exportar datos). Cada opción abre su propio apartado y tiene un botón para regresar a la lista de Ajustes. El botón «Volver» de la lista regresa a la pestaña anterior.
+
+Los formularios y controles existentes se reutilizan sin duplicarlos. Esta modificación solo afecta a la navegación y presentación; no altera la autenticación, el backend ni las operaciones de sincronización.
+
 ## Personalización del color
 
 En **nombre de usuario → Ajustes → Apariencia** se puede seleccionar uno de los nueve colores: **verde, azul, rojo, rosa, morado, turquesa, naranja, mostaza y grafito**.

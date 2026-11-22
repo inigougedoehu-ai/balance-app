@@ -10,6 +10,38 @@ const SUPPORTED_VERSIONS=["0.5.0-private-sync","0.6.0-health-profile"];
 const PROFILE_VERSION="0.6.0-health-profile";
 let vault=null,session=null,synchronizer=null,forms=null,composer=null,loginBusy=false,profileReady=false;
 let lastMainView="peso";
+const SETTINGS_SECTIONS={"apariencia":{"title":"Apariencia","kicker":"PERSONALIZACIÓN","description":"Elige cómo quieres que se vea Balance."},"personales":{"title":"Datos personales","kicker":"PERFIL","description":"Gestiona los datos utilizados para calcular tu edad y el IMC."},"objetivo":{"title":"Objetivo de peso","kicker":"SEGUIMIENTO","description":"Establece el peso objetivo que aparece en tu resumen y en la gráfica."},"sincronizacion":{"title":"Sincronización","kicker":"DATOS Y PRIVACIDAD","description":"Comprueba cuándo se sincronizaron tus registros por última vez."},"exportacion":{"title":"Exportar datos","kicker":"DATOS Y PRIVACIDAD","description":"Descarga una copia de los registros de tu cuenta en formato JSON."}};
+let settingsSection=null;
+function resetSettings(){
+  settingsSection=null;
+  $("settings-home").hidden=false;
+  $("settings-detail").hidden=true;
+  document.querySelectorAll("[data-settings-panel]").forEach(panel=>panel.hidden=true);
+}
+function openSettingsSection(key){
+  if(!vault||!Object.prototype.hasOwnProperty.call(SETTINGS_SECTIONS,key))return;
+  const panel=[...document.querySelectorAll("[data-settings-panel]")].find(el=>el.dataset.settingsPanel===key);
+  if(!panel)return;
+  const info=SETTINGS_SECTIONS[key];
+  $("settings-detail-kicker").textContent=info.kicker;
+  $("settings-detail-title").textContent=info.title;
+  $("settings-detail-description").textContent=info.description;
+  $("settings-home").hidden=true;
+  $("settings-detail").hidden=false;
+  document.querySelectorAll("[data-settings-panel]").forEach(el=>el.hidden=el!==panel);
+  settingsSection=key;
+  window.scrollTo({top:0,behavior:"auto"});
+  $("settings-detail-title").focus({preventScroll:true});
+}
+function closeSettingsSection(){
+  const old=settingsSection;
+  resetSettings();
+  window.scrollTo({top:0,behavior:"auto"});
+  if(old){
+    const source=[...document.querySelectorAll("[data-settings-target]")].find(el=>el.dataset.settingsTarget===old);
+    source?.focus({preventScroll:true});
+  }
+}
 function createComposer(){
   const overlay=$("composer-overlay");
   const menu=$("composer-menu");
@@ -77,6 +109,7 @@ function toggleUserMenu(){
 }
 function navigate(view){
   if(view==="peso"||view==="comidas")lastMainView=view;
+  resetSettings();
   closeUserMenu();
   if(composer?.isOpen())composer.hide();
   if(vault)$("fab-add").hidden=view==="ajustes";
@@ -166,6 +199,7 @@ async function signOut(){
   }
   if(vault)await vault.flush().catch(()=>{});
   composer?.hide();
+  resetSettings();
   const oldToken=session;
   vault=null;session=null;synchronizer=null;profileReady=false;
   applyTheme("verde");
@@ -200,6 +234,9 @@ async function start(){
     $("user-menu-trigger").addEventListener("click",toggleUserMenu);
     $("open-settings").addEventListener("click",()=>navigate("ajustes"));
     $("settings-back").addEventListener("click",()=>navigate(lastMainView));
+    $("settings-section-back").addEventListener("click",closeSettingsSection);
+    document.querySelectorAll("[data-settings-target]").forEach(button=>
+      button.addEventListener("click",()=>openSettingsSection(button.dataset.settingsTarget)));
     $("brand-home").addEventListener("click",()=>{if(vault)navigate("peso")});
     document.addEventListener("pointerdown",event=>{
       if(!$("user-actions").contains(event.target))closeUserMenu();

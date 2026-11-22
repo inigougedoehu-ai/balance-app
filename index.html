@@ -191,21 +191,65 @@
       </section>
 
       <section class="view" data-view="ajustes" hidden>
-        <button type="button" class="back-button" id="settings-back">← Volver</button>
-        <div class="page-head">
-          <span class="eyebrow">CUENTA Y DATOS</span>
-          <h1>Ajustes</h1>
-          <p>Objetivo, sincronización y exportación de registros.</p>
+  <div id="settings-home">
+    <button type="button" class="back-button" id="settings-back">← Volver</button>
+    <div class="page-head">
+      <span class="eyebrow">TU CUENTA</span>
+      <h1>Ajustes</h1>
+      <p>Personaliza Balance y gestiona la información de tu cuenta.</p>
+    </div>
+    <div class="settings-directory">
+      <section class="settings-category" aria-labelledby="settings-personal-title">
+        <h2 id="settings-personal-title" class="settings-category-title">Personalización y seguimiento</h2>
+        <div class="settings-links">
+          <button type="button" class="settings-link" data-settings-target="apariencia" aria-label="Apariencia">
+  <span class="settings-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11.5" cy="12" r="8.3"/><path d="M16 16.5c-1.1-1-2.1-.5-2.5.4-.4.9-1.3 1.4-2.3.8"/><circle cx="8" cy="9" r=".7"/><circle cx="12" cy="7.4" r=".7"/><circle cx="16" cy="10" r=".7"/></svg></span>
+  <span class="settings-link-copy"><strong>Apariencia</strong><small>Colores de la aplicación</small></span>
+  <span class="settings-link-arrow" aria-hidden="true">›</span>
+</button>
+          <button type="button" class="settings-link" data-settings-target="personales" aria-label="Datos personales">
+  <span class="settings-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5.2 20a6.8 6.8 0 0 1 13.6 0"/></svg></span>
+  <span class="settings-link-copy"><strong>Datos personales</strong><small>Altura y fecha de nacimiento</small></span>
+  <span class="settings-link-arrow" aria-hidden="true">›</span>
+</button>
+          <button type="button" class="settings-link" data-settings-target="objetivo" aria-label="Objetivo de peso">
+  <span class="settings-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg></span>
+  <span class="settings-link-copy"><strong>Objetivo de peso</strong><small>Consulta o cambia tu objetivo</small></span>
+  <span class="settings-link-arrow" aria-hidden="true">›</span>
+</button>
         </div>
-        <article class="panel settings-panel appearance-settings">
-          <h2>Apariencia</h2>
+      </section>
+      <section class="settings-category" aria-labelledby="settings-data-title">
+        <h2 id="settings-data-title" class="settings-category-title">Datos y privacidad</h2>
+        <div class="settings-links">
+          <button type="button" class="settings-link" data-settings-target="sincronizacion" aria-label="Sincronización">
+  <span class="settings-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v4h-4"/><path d="M4 17v-4h4"/><path d="M5.8 9a7.5 7.5 0 0 1 12.6-2L20 11"/><path d="M4 13l1.6 4a7.5 7.5 0 0 0 12.6-2"/></svg></span>
+  <span class="settings-link-copy"><strong>Sincronización</strong><small>Estado de conexión y guardado</small></span>
+  <span class="settings-link-arrow" aria-hidden="true">›</span>
+</button>
+          <button type="button" class="settings-link" data-settings-target="exportacion" aria-label="Exportar datos">
+  <span class="settings-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></span>
+  <span class="settings-link-copy"><strong>Exportar datos</strong><small>Descarga una copia de tus registros</small></span>
+  <span class="settings-link-arrow" aria-hidden="true">›</span>
+</button>
+        </div>
+      </section>
+    </div>
+  </div>
+  <div id="settings-detail" hidden>
+    <button type="button" class="back-button" id="settings-section-back">← Ajustes</button>
+    <div class="page-head">
+      <span class="eyebrow" id="settings-detail-kicker">TU CUENTA</span>
+      <h1 id="settings-detail-title" tabindex="-1">Ajustes</h1>
+      <p id="settings-detail-description"></p>
+    </div>
+    <article data-settings-panel="apariencia" hidden class="panel settings-panel appearance-settings">
           <p class="appearance-description">Elige el color de Balance. Puedes cambiarlo cuando quieras.</p>
           <div id="theme-options" class="theme-options" role="group" aria-label="Color de la aplicación"></div>
           <p id="theme-choice-status" class="theme-choice-status" role="status" aria-live="polite">Verde seleccionado</p>
           <p class="field-hint">Se guarda para esta cuenta en este dispositivo. No modifica tus registros.</p>
         </article>
-        <article class="panel settings-panel">
-          <h2>Datos personales</h2>
+    <article data-settings-panel="personales" hidden class="panel settings-panel">
           <form id="profile-form" class="form-stack">
             <label for="profile-height">Altura (cm)</label>
             <input id="profile-height" type="number" min="90" max="250" step="0.1" inputmode="decimal" placeholder="Ej.: 170">
@@ -216,8 +260,7 @@
             <p id="profile-support-status" class="field-hint">Los datos se sincronizan con tu cuenta.</p>
           </form>
         </article>
-        <article class="panel settings-panel">
-          <h2>Objetivo de peso</h2>
+    <article data-settings-panel="objetivo" hidden class="panel settings-panel">
           <form id="goal-form" class="form-stack">
             <label for="goal-value">Peso objetivo (kg)</label>
             <input id="goal-value" name="goal" type="number" step="0.1" min="15" max="500" placeholder="Ej.: 70,0" inputmode="decimal">
@@ -225,19 +268,18 @@
             <button type="submit" class="primary-button">Guardar objetivo</button>
           </form>
         </article>
-        <article class="panel settings-panel">
-          <h2>Sincronización</h2>
+    <article data-settings-panel="sincronizacion" hidden class="panel settings-panel">
           <p id="sync-last-confirmed" class="last-confirmed">Aún no se ha confirmado una sincronización en este dispositivo.</p>
           <div id="sync-status" class="backend-status" role="status" aria-live="polite">Se comprobará al iniciar sesión.</div>
           <p class="field-hint">Los cambios se guardan primero en el dispositivo. Los pendientes se envían al volver a iniciar sesión con conexión.</p>
         </article>
-        <article class="panel settings-panel">
-          <h2>Almacenamiento</h2>
+    <article data-settings-panel="exportacion" hidden class="panel settings-panel">
           <p class="muted">Puedes guardar una copia de tus registros. El archivo exportado no está cifrado.</p>
           <button id="export-data" class="secondary-button" type="button">Exportar mis registros (JSON)</button>
           <p class="field-hint">Contiene los registros de esta cuenta. Guárdalo en un lugar privado.</p>
         </article>
-      </section>
+  </div>
+</section>
     </main>
     <footer>Balance · Registro personal</footer>
   </div>
