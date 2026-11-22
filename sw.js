@@ -1,4 +1,4 @@
-const CACHE_NAME = "balance-demo-v4";
+const CACHE_NAME = "balance-demo-v5";
 const CORE = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./icon.svg"];
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
