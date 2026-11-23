@@ -52,9 +52,14 @@
         </select>
         <label for="login-password">Contraseña</label>
         <input id="login-password" type="password" autocomplete="current-password" minlength="14" maxlength="200" required>
+        <label class="remember-login" for="remember-device">
+          <input id="remember-device" type="checkbox">
+          <span><strong>Mantener sesión iniciada en este dispositivo</strong>
+          <small>Solo para un dispositivo personal. Podrás entrar sin contraseña hasta que cierres sesión.</small></span>
+        </label>
         <button id="login-submit" type="submit" class="primary-button">Entrar en Balance</button>
-        <div id="login-status" class="backend-status" role="status" aria-live="polite">Con internet se comprobará tu contraseña. No se guarda en el navegador.</div>
-        <p class="field-hint">También puedes consultar la copia local sin conexión si ya has utilizado esta cuenta en este dispositivo.</p>
+        <div id="login-status" class="backend-status" role="status" aria-live="polite">No guardamos tu contraseña. Puedes activar el acceso automático en este dispositivo.</div>
+        <p class="field-hint">Si activas el acceso automático, el dispositivo guarda una clave local para desbloquear tus registros. La conexión con Google dura un máximo de 7 días; si caduca, podrás seguir consultando tus datos locales, pero necesitarás la contraseña para volver a sincronizar.</p>
       </form>
     </section>
 

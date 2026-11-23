@@ -52,6 +52,18 @@ La navegación principal tiene únicamente **Peso** y **Comidas**. El botón flo
 
 No se necesitan cambios nuevos en Apps Script para estas funciones. Para guardar altura y fecha de nacimiento, sigue siendo necesario tener publicada la versión `0.6.0-health-profile` del backend.
 
+## Mantener sesión iniciada en el dispositivo
+
+En la pantalla de acceso puedes marcar **«Mantener sesión iniciada en este dispositivo»**. Es una decisión explícita para cada dispositivo, adecuada solo para un iPhone o Mac personal. No se guarda la contraseña en texto claro ni se envía a ningún servicio adicional.
+
+El desbloqueo sin contraseña utiliza una `CryptoKey` AES-GCM no exportable conservada localmente por IndexedDB. La clave permite descifrar la copia local privada; junto a ella se guarda el identificador temporal de la sesión de Apps Script cifrado, con su fecha de caducidad. Cualquier persona que pueda utilizar el mismo navegador en ese dispositivo tendrá acceso a la aplicación, por lo que no debe activarse en equipos compartidos. Tampoco protege frente a código malicioso ejecutado dentro del mismo origen web.
+
+Al cerrar y volver a abrir la aplicación, se intenta restaurar la última cuenta recordada. Mientras el token de Google siga vigente, la sincronización continúa. El backend limita las sesiones a **7 días**; transcurrido ese plazo, Balance sigue permitiendo consultar y editar la copia cifrada local, pero se necesita cerrar sesión y volver a entrar con la contraseña para establecer una sesión remota nueva y enviar los cambios pendientes.
+
+**Cerrar sesión** elimina la clave recordada y pide contraseña en el siguiente acceso. No elimina ni la copia local cifrada ni los registros de Google Sheets. Si se borran los datos del sitio o el navegador elimina su almacenamiento, se pierde el acceso recordado y puede perderse la copia local; por eso la sincronización y las copias externas siguen siendo importantes. En dispositivos que no permitan persistir la `CryptoKey`, Balance seguirá funcionando con contraseña y mostrará un aviso.
+
+Esta actualización solo modifica la PWA y IndexedDB: **no exige modificar Apps Script ni las contraseñas existentes**.
+
 ## Mejoras de uso y seguridad (0.8)
 
 - **Calendario interactivo**: consultar, editar o borrar registros directamente en cada fecha. Los botones «+ Peso», «+ Comida» y «+ Medidas» abren los formularios con esa fecha seleccionada.

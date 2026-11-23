@@ -1,5 +1,5 @@
 import {request} from "./lib/bridge.js";
-import {unlock} from "./lib/vault.js";
+import {unlock,restoreRemembered,forgetRemembered} from "./lib/vault.js";
 import {createSynchronizer} from "./lib/sync.js";
 import {route,status,toast} from "./lib/ui.js";
 import {createForms} from "./lib/forms.js";
@@ -13,7 +13,7 @@ const EXTRA_VERSION="0.7.0-diary-extras";
 const SAFE_VERSION="0.8.0-safe-sync";
 const SUPPORTED_VERSIONS=["0.5.0-private-sync","0.6.0-health-profile",EXTRA_VERSION,SAFE_VERSION];
 const PROFILE_VERSION="0.6.0-health-profile";
-let vault=null,session=null,synchronizer=null,forms=null,composer=null,features=null,prefs=null,importer=null,loginBusy=false,profileReady=false,extrasReady=false,safeSync=false;
+let vault=null,session=null,synchronizer=null,forms=null,composer=null,features=null,prefs=null,importer=null,loginBusy=false,resuming=false,profileReady=false,extrasReady=false,safeSync=false;
 let lastMainView="peso";
 const SETTINGS_SECTIONS={"apariencia":{"title":"Apariencia","kicker":"PERSONALIZACIÓN","description":"Elige cómo quieres que se vea Balance."},"personales":{"title":"Datos personales","kicker":"PERFIL","description":"Gestiona los datos utilizados para calcular tu edad y el IMC."},"objetivo":{"title":"Objetivo de peso","kicker":"SEGUIMIENTO","description":"Establece el peso objetivo que aparece en tu resumen y en la gráfica."},"sincronizacion":{"title":"Sincronización","kicker":"DATOS Y PRIVACIDAD","description":"Comprueba cuándo se sincronizaron tus registros por última vez."},"exportacion":{"title":"Exportar datos","kicker":"DATOS Y PRIVACIDAD","description":"Descarga una copia de tus registros en JSON o CSV."},"visualizacion":{"title":"Indicadores visibles","kicker":"PERSONALIZACIÓN","description":"Elige qué indicadores aparecen en tu resumen de Peso."},"recordatorios":{"title":"Recordatorios","kicker":"PREFERENCIAS","description":"Configura avisos opcionales al abrir Balance."}};
 let settingsSection=null;
@@ -170,20 +170,85 @@ function afterSave(){
   if(synchronizer)synchronizer.sync();
   else refreshStatus("Datos guardados cifrados. Inicia sesión con internet para sincronizar.","working");
 }
+async function enterWorkspace(opened,{token=null,restored=false,expired=false}={}){
+    const userId=opened.userId;
+    vault=opened;
+    if(token && extrasReady){
+      vault.extrasEnabled=true;
+      await vault.save();
+    }else if(!token){
+      extrasReady=vault.extrasEnabled===true;
+    }
+    loadTheme(userId);
+    prefs?.load();
+    session=token||null;
+    $("login-password").value="";
+    $("login-screen").hidden=true;
+    document.querySelector(".main-nav").hidden=false;
+    $("main-content").hidden=false;
+    $("user-actions").hidden=false;
+    $("account-label").textContent=userId==="inigo"?"Iñigo":"Clara";
+    $("account-avatar").textContent=userId==="inigo"?"I":"C";
+    $("user-menu-trigger").setAttribute("aria-label","Menú de "+(userId==="inigo"?"Iñigo":"Clara"));
+    closeUserMenu();
+    $("profile-submit").disabled=!profileReady;
+    $("profile-support-status").textContent=profileReady
+      ?"La altura y la fecha de nacimiento se guardan con esta cuenta."
+      :"Para sincronizar estos datos, actualiza Code.gs a la versión 0.6.0 y publica una nueva implementación.";
+    forms.reset();
+    forms.repaint();
+    displayLastSync();
+    navigate(prefs?.lastView()||"peso");
+    synchronizer=session!==null
+      ?createSynchronizer(vault,session,forms.repaint,(msg,kind)=>refreshStatus(msg,kind))
+      :null;
+    if(synchronizer)synchronizer.sync();
+    else{
+      refreshStatus("Modo local: no hay sesión remota. Los cambios están cifrados y se enviarán cuando vuelvas a entrar con internet.","working");
+      toast(restored&&expired?
+        "La sesión de Google ha caducado; tus datos locales siguen disponibles.":
+        restored?"Cuenta abierta desde este dispositivo, sin conexión remota.":"Modo sin conexión");
+    }
+    renderSyncControls();
+    prefs?.checkReminder(vault);
+    if(restored&&!token){
+      refreshStatus(expired?
+        "Sesión de Google caducada: puedes usar tus registros locales, pero para sincronizar debes cerrar sesión y volver a entrar con tu contraseña.":
+        "Copia local abierta: inicia sesión con contraseña para recuperar la sincronización.","working");
+    }
+}
+async function resumeRemembered(){
+  resuming=true;
+  try{
+    const saved=await restoreRemembered();
+    if(!saved)return;
+    const version=saved.version;
+    profileReady=[PROFILE_VERSION,EXTRA_VERSION,SAFE_VERSION].includes(version)||!saved.token;
+    extrasReady=[EXTRA_VERSION,SAFE_VERSION].includes(version);
+    safeSync=version===SAFE_VERSION;
+    $("login-user").value=saved.ctx.userId;
+    $("remember-device").checked=true;
+    await enterWorkspace(saved.ctx,{token:saved.token,restored:true,expired:saved.expired});
+  }catch(error){
+    console.error("Balance: no se pudo reabrir la sesión recordada",error);
+    if(!vault)status("login-status","Introduce tu contraseña para acceder.","");
+  }finally{resuming=false}
+}
 async function login(event){
   event.preventDefault();
-  if(loginBusy)return;
+  if(loginBusy||resuming)return;
   loginBusy=true;
   const button=$("login-submit");
   button.disabled=true;
   const userId=$("login-user").value,password=$("login-password").value;
-  let authenticated=false,result=null,token=null;
+  let authenticated=false,result=null,token=null,backendVersion=null;
   try{
     if(!["inigo","clara"].includes(userId)||password.length<14)throw Error("Introduce una cuenta y su contraseña.");
     status("login-status","Comprobando conexión y credenciales…","working");
     try{
       if(!navigator.onLine)throw Error("Sin conexión");
       const health=await request("health");
+      backendVersion=health?.version||null;
       if(!health?.ok||!SUPPORTED_VERSIONS.includes(health.version)){
         throw Error("Debes actualizar Code.gs y Bridge.html y publicar una nueva versión de Apps Script.");
       }
@@ -204,43 +269,22 @@ async function login(event){
       status("login-status","Sin conexión con Google. Intentando desbloqueo local…","working");
     }
     const opened=await unlock(userId,password,authenticated);
-    vault=opened;
-    if(authenticated && extrasReady){
-      vault.extrasEnabled=true;
-      await vault.save();
-    }else if(!authenticated){
-      extrasReady=vault.extrasEnabled===true;
+    await enterWorkspace(opened,{token:authenticated?token:null});
+    if($("remember-device").checked){
+      try{
+        await opened.remember({
+          token:authenticated?token:null,
+          expiresAt:authenticated?result?.expiresAt:null,
+          version:backendVersion
+        });
+      }catch(error){
+        console.warn("Balance: el navegador no pudo recordar la sesión",error);
+        toast("Sesión abierta, pero no se pudo recordar en este dispositivo.");
+      }
+    }else{
+      await forgetRemembered().catch(error=>
+        console.warn("Balance: no se pudo limpiar un acceso recordado",error));
     }
-    loadTheme(userId);
-    prefs?.load();
-    session=authenticated?token:null;
-    $("login-password").value="";
-    $("login-screen").hidden=true;
-    document.querySelector(".main-nav").hidden=false;
-    $("main-content").hidden=false;
-    $("user-actions").hidden=false;
-    $("account-label").textContent=userId==="inigo"?"Iñigo":"Clara";
-    $("account-avatar").textContent=userId==="inigo"?"I":"C";
-    $("user-menu-trigger").setAttribute("aria-label","Menú de "+(userId==="inigo"?"Iñigo":"Clara"));
-    closeUserMenu();
-    $("profile-submit").disabled=!profileReady;
-    $("profile-support-status").textContent=profileReady
-      ?"La altura y la fecha de nacimiento se guardan con esta cuenta."
-      :"Para sincronizar estos datos, actualiza Code.gs a la versión 0.6.0 y publica una nueva implementación.";
-    forms.reset();
-    forms.repaint();
-    displayLastSync();
-    navigate(prefs?.lastView()||"peso");
-    synchronizer=authenticated
-      ?createSynchronizer(vault,session,forms.repaint,(msg,kind)=>refreshStatus(msg,kind))
-      :null;
-    if(synchronizer)synchronizer.sync();
-    else{
-      refreshStatus("Modo local: no hay sesión remota. Los cambios están cifrados y se enviarán cuando vuelvas a entrar con internet.","working");
-      toast("Modo sin conexión");
-    }
-    renderSyncControls();
-    prefs?.checkReminder(vault);
   }catch(error){
     $("login-password").value="";
     status("login-status",error.message||"No se ha podido iniciar sesión","error");
@@ -257,6 +301,9 @@ async function signOut(){
     return;
   }
   if(vault)await vault.flush().catch(()=>{});
+  let forgot=true;
+  try{await forgetRemembered()}
+  catch(error){forgot=false;console.error("Balance: no se pudo borrar la sesión recordada",error)}
   composer?.hide();
   features?.closeCalendar();
   resetSettings();
@@ -270,7 +317,10 @@ async function signOut(){
   $("user-actions").hidden=true;
   $("fab-add").hidden=true;
   $("login-password").value="";
-  status("login-status","Introduce tu contraseña para abrir tus datos.","");
+  $("remember-device").checked=false;
+  status("login-status",forgot?
+    "Sesión cerrada. Introduce tu contraseña para abrir tus datos.":
+    "Se cerró la sesión, pero no se pudo borrar el acceso recordado. Borra los datos de Balance de este navegador.","");
   if(oldToken)request("logout",{token:oldToken}).catch(()=>{});
 }
 function syncNow(){
@@ -339,6 +389,7 @@ async function start(){
       }
     });
     if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(console.warn);
+    await resumeRemembered();
   }catch(error){
     console.error("Balance: error inicializando",error);
     status("login-status",error.message,"error");

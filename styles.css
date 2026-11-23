@@ -986,3 +986,34 @@ body.calendar-open{overflow:hidden}
   .measure-chart svg{max-height:220px}
   .period-compare{font-size:11px}
 }
+
+
+/* Acceso voluntario y persistente: clave local del navegador, no contraseña. */
+.remember-login{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  margin:4px 0 7px;
+  padding:13px 14px;
+  border:1px solid var(--balance-accent-border);
+  background:var(--balance-accent-soft);
+  border-radius:12px;
+  color:#33473d;
+  cursor:pointer;
+}
+.remember-login input{
+  flex:none;
+  margin:2px 0 0;
+  width:18px;
+  height:18px;
+  accent-color:var(--balance-accent);
+  cursor:pointer;
+}
+.remember-login span{display:flex;flex-direction:column;gap:5px;min-width:0}
+.remember-login strong{font-size:13px;font-weight:740;line-height:1.4}
+.remember-login small{
+  color:#617469;
+  font-size:11.5px;
+  font-weight:450;
+  line-height:1.5;
+}

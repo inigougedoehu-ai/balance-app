@@ -1,4 +1,4 @@
-const CACHE_NAME = "balance-private-v18";
+const CACHE_NAME = "balance-private-v19";
 const CORE = ["./", "./index.html", "./private.html", "./styles.css", "./private-app.js", "./lib/bridge.js", "./lib/vault.js", "./lib/sync.js", "./lib/ui.js", "./lib/health.js", "./lib/chart.js", "./lib/diary.js", "./lib/measure-chart.js", "./lib/preferences.js", "./lib/import.js", "./lib/theme.js", "./lib/forms.js", "./manifest.webmanifest", "./icon.svg"];
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
